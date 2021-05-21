@@ -59,10 +59,8 @@
  * (DOE). All rights in the program are reserved by the DOE and Los Alamos National Security,
  * LLC. Permission is granted to the public to copy and use this software without charge,
  * provided that this Notice and any statement of authorship are reproduced on all copies.
- * Neither the U.S. 
- *
- * Government nor LANS makes any warranty, express or implied, or assumes any liability 
- * or responsibility for the use of this software.
+ * Neither the U.S. Government nor LANS makes any warranty, express or implied, or assumes any
+ * liability or responsibility for the use of this software.
  */
 
 
@@ -86,8 +84,8 @@ extern "C" {
  * SINGLE_PRECISION : if defined, single-precision floats will be used for calculations.
  */
 #define KC2D_NUM_VERTS 32
-#define KC2D_MAX_VERTS 64
-#define SINGLE_PRECISION
+#define KC2D_MAX_VERTS 42
+// #define SINGLE_PRECISION
 
 
 /**
@@ -113,11 +111,6 @@ extern "C" {
  * R2D library (Powell and Abel, 2015 and LA-UR-15-26964); they are prefixed with `r2d_`. The
  * following declarations are related to R2D. See below them for the KonigCell2D functions.
  */
-
-/**
- * Macros needed by R2D
- */
-#define R2D_MAX_VERTS KC2D_MAX_VERTS
 
 
 /* Real type used in calculations. */
@@ -169,9 +162,13 @@ typedef struct {
 
 /* A polygon. Can be convex, nonconvex, even multiply-connected. */
 typedef struct {
-	r2d_vertex verts[R2D_MAX_VERTS];    /* Vertex buffer. */
+	r2d_vertex verts[KC2D_MAX_VERTS];    /* Vertex buffer. */
 	r2d_int nverts;                     /* Number of vertices in the buffer. */
 } r2d_poly;
+
+
+/* Initialise a `r2d_poly` from an array of vertices. */
+void r2d_init_poly(r2d_poly* poly, r2d_rvec2* vertices, r2d_int numverts);
 
 
 
@@ -287,10 +284,10 @@ typedef struct {
  *     intersection area.
  */
 typedef enum {
-    kc2d_ratio,
-    kc2d_intersection,
-    kc2d_particle,
-    kc2d_one,
+    kc2d_ratio = 0,
+    kc2d_intersection = 1,
+    kc2d_particle = 2,
+    kc2d_one = 3,
 } kc2d_mode;
 
 
@@ -311,6 +308,37 @@ void            kc2d_rasterize(r2d_poly             *poly,
                                kc2d_pixels          *pixels,
                                r2d_real             *local_grid,
                                const kc2d_mode      mode);
+
+
+/*
+ * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices and save it as a `r2d_poly`.
+ */
+r2d_real        kc2d_circle(r2d_poly                *poly,
+                            const r2d_rvec2         centre,
+                            const r2d_real          radius);
+
+
+/**
+ * Approximate a 2D cylinder (i.e. the convex hull of two circles) with `KC2D_NUM_VERTS` vertices
+ * and save it as a `r2d_poly`. Omit the second circle's area. Return the full cylinder's area.
+ */
+r2d_real        kc2d_half_cylinder(r2d_poly         *poly,
+                                   const r2d_rvec2  p1,
+                                   const r2d_rvec2  p2,
+                                   const r2d_real   r1,
+                                   const r2d_real   r2);
+
+
+/**
+ * Approximate a 2D cylinder (i.e. the convex hull of two circles) with `KC2D_NUM_VERTS` vertices
+ * and save it as a `r2d_poly`. Omit the second circle's area. Return the full cylinder's area.
+ */
+r2d_real        kc2d_cylinder(r2d_poly              *poly,
+                              const r2d_rvec2       p1,
+                              const r2d_rvec2       p2,
+                              const r2d_real        r1,
+                              const r2d_real        r2);
+
 
     
 #ifdef __cplusplus

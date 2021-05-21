@@ -78,7 +78,6 @@
 
 
 /* Functions from R2D used by KonigCell2D. See https://github.com/devonmpowell/r3d */
-void r2d_init_poly(r2d_poly* poly, r2d_rvec2* vertices, r2d_int numverts);
 void r2d_translate(r2d_poly* poly, r2d_rvec2 shift);
 void r2d_get_ibox(r2d_poly* poly, r2d_dvec2 ibox[2], r2d_rvec2 d);
 void r2d_clamp_ibox(r2d_poly* poly, r2d_dvec2 ibox[2], r2d_dvec2 clampbox[2], r2d_rvec2 d);
@@ -221,7 +220,7 @@ r2d_real        kc2d_circle(r2d_poly *poly, const r2d_rvec2 centre, const r2d_re
  * and save it as a `r2d_poly`. Omit the second circle's area. Return the full cylinder's area.
  */
 r2d_real        kc2d_half_cylinder(r2d_poly *poly, const r2d_rvec2 p1, const r2d_rvec2 p2,
-                                    const r2d_real r1, const r2d_real r2)
+                                   const r2d_real r1, const r2d_real r2)
 {
     r2d_rvec2   verts[KC2D_NUM_VERTS];
 
@@ -238,14 +237,14 @@ r2d_real        kc2d_half_cylinder(r2d_poly *poly, const r2d_rvec2 p1, const r2d
     start_ang = KC2D_PI / 2 + ang;
     end_ang = 3 * KC2D_PI / 2 + ang;
 
-    inc = (end_ang - start_ang) / NUM_VERTS_2;
+    inc = (end_ang - start_ang) / (NUM_VERTS_2 - 1);
     for (i = 0; i < NUM_VERTS_2; ++i)
     {
         verts[i].x = p1.x + KC2D_COS(start_ang + i * inc) * r1;
         verts[i].y = p1.y + KC2D_SIN(start_ang + i * inc) * r1;
     }
 
-    inc = (start_ang - end_ang) / NUM_VERTS_2;
+    inc = (start_ang - end_ang) / (NUM_VERTS_2 - 1);
     for (i = 0; i < NUM_VERTS_2; ++i)
     {
         verts[i + NUM_VERTS_2].x = p2.x + KC2D_COS(end_ang + i * inc) * r2;
@@ -280,7 +279,7 @@ r2d_real        kc2d_cylinder(r2d_poly *poly, const r2d_rvec2 p1, const r2d_rvec
     start_ang = KC2D_PI / 2 + ang;
     end_ang = 3 * KC2D_PI / 2 + ang;
 
-    inc = (end_ang - start_ang) / NUM_VERTS_2;
+    inc = (end_ang - start_ang) / (NUM_VERTS_2 - 1);
     for (i = 0; i < NUM_VERTS_2; ++i)
     {
         verts[i].x = p1.x + KC2D_COS(start_ang + i * inc) * r1;
@@ -290,7 +289,7 @@ r2d_real        kc2d_cylinder(r2d_poly *poly, const r2d_rvec2 p1, const r2d_rvec
     start_ang = ang - KC2D_PI / 2;
     end_ang = ang + KC2D_PI / 2;
 
-    inc = (end_ang - start_ang) / NUM_VERTS_2;
+    inc = (end_ang - start_ang) / (NUM_VERTS_2 - 1);
     for (i = 0; i < NUM_VERTS_2; ++i)
     {
         verts[i + NUM_VERTS_2].x = p2.x + KC2D_COS(start_ang + i * inc) * r2;
@@ -417,6 +416,7 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
 
     // Auxilliaries
     r2d_int         ip;             // Trajectory particle index
+    r2d_real        r1, r2;         // Radii for two particle
     r2d_real        area;           // Total area for one 2D cylinder
     r2d_real        factor;         // Current factor to multiply raster with
 
@@ -425,6 +425,7 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     r2d_real        ysize = ylim[1] - ylim[0];
 
     r2d_rvec2       grid_size = {{xsize / dims[0], ysize / dims[1]}};
+    r2d_real        rsmall = 1.0e-10 * (grid_size.x < grid_size.y ? grid_size.x : grid_size.y);
 
     // Local grid which will be used for rasterising
     r2d_real        *lgrid = (r2d_real*)KC2D_CALLOC((size_t)dims[0] * dims[1], sizeof(r2d_real));
@@ -445,22 +446,27 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     // two particle locations, minus the second circle's area (it added in the previous iteration)
     for (ip = 0; ip < num_particles - 2; ++ip)
     {
-        area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], radii[ip], radii[ip + 1]);
+        r1 = (radii == NULL ? rsmall : radii[ip]);
+        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
+
+        area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
         kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
     }
 
     // The last trajectory segment is pixllised as a full cylinder if not omit_last
+    r1 = (radii == NULL ? rsmall : radii[ip]);
+    r2 = (radii == NULL ? rsmall : radii[ip + 1]);
+    factor = (factors == NULL ? 1 : factors[ip]);
+
     if (omit_last)
     {
-        area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], radii[ip], radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
+        area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
         kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
     }
     else
     {
-        area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], radii[ip], radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
+        area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
         kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
     }
 
@@ -803,11 +809,11 @@ void            kc2d_static(kc2d_pixels             *pixels,
     for (ip = 0; ip < num_particles; ++ip)
     {
         pos = positions[ip];
-        r = radii[ip];
-        f = (factors == NULL ? 1 : factors[ip]);
+        r = (radii == NULL ? 0. : radii[ip]);
+        f = (factors == NULL ? 1. : factors[ip]);
 
         // If a particle's radius is zero, treat it as a point
-        if (radii[ip] == 0.)
+        if (r == 0.)
         {
             if (pos.x == xlim[1])
                 nx[0] = dims[0] - 1;
@@ -985,75 +991,6 @@ void            kc2d_rasterize(r2d_poly             *poly,
 
 
 
-int             main(void)
-{
-    // Initialise pixel grid
-    r2d_int     dims[2] = {2048, 1080};
-    r2d_real    xlim[2] = {-10., 40.};
-    r2d_real    ylim[2] = {-10., 20.};
-
-    r2d_real    *grid = (r2d_real*)calloc(dims[0] * dims[1], sizeof(r2d_real));
-    r2d_real    *intersections = (r2d_real*)calloc(dims[0] * dims[1], sizeof(r2d_real));
-
-    kc2d_pixels pixels = {
-        .grid = grid,
-        .igrid = NULL,
-        .dims = dims,
-        .xlim = xlim,
-        .ylim = ylim
-    };
-
-    // Initialise trajectory
-    r2d_int     num_particles = 4;
-    r2d_real    positions[8] = {15., 5., 35., 10., 5., 15., -5., -5.};
-    r2d_real    radii[4] = {1.001, 2.001, 3.001, 2.001};
-
-    r2d_real    *factors = (r2d_real*)calloc(dims[0] * dims[1], sizeof(r2d_real));
-
-    for (r2d_int i = 0; i < num_particles; ++i)
-        factors[i] = 1;
-
-    kc2d_particles particles = (kc2d_particles){
-        .positions = positions,
-        .radii = radii,
-        .factors = NULL,
-        .num_particles = num_particles
-    };
-
-    // Dynamic particle
-    kc2d_dynamic(&pixels, &particles, kc2d_intersection, 0);
-
-    // Rasterizing particle
-    r2d_poly    circle;
-    r2d_rvec2   centre = {{1., 1.}};
-    kc2d_circle(&circle, centre, radii[0]);
-
-    kc2d_rasterize(&circle, 1, 1, &pixels, NULL, kc2d_intersection);
-
-    // Static particles
-    kc2d_static(&pixels, &particles, kc2d_intersection);
-
-    // Print global grid to the terminal
-    printf("%f %f %f %f\n", xlim[0], xlim[1], ylim[0], ylim[1]);
-
-    for (r2d_int i = 0; i < dims[0]; ++i)
-    {
-        for (r2d_int j = 0; j < dims[1]; ++j)
-            printf("%f ", grid[i * dims[1] + j]);
-        printf("\n");
-    }
-
-    free(grid);
-    free(intersections);
-
-    return 0;
-}
-
-
-
-
-
-
 /* R2D macros and functions. They were taken from https://github.com/devonmpowell/r3d and
  * significantly optimised for `polyorder = 0` (i.e. only area / zeroth moment). */
 #define ONE_THIRD 0.333333333333333333333333333333333333333333333333333333
@@ -1178,11 +1115,11 @@ void r2d_clip(r2d_poly* poly, r2d_plane* planes, r2d_int nplanes) {
     if(*nverts <= 0) return;
 
     // signed distances to the clipping plane
-    r2d_real sdists[R2D_MAX_VERTS];
+    r2d_real sdists[KC2D_MAX_VERTS];
     r2d_real smin, smax;
 
     // for marking clipped vertices
-    r2d_int clipped[R2D_MAX_VERTS];
+    r2d_int clipped[KC2D_MAX_VERTS];
 
     // loop over each clip plane
     for(p = 0; p < nplanes; ++p) {
@@ -1307,8 +1244,8 @@ void r2d_split_coord(r2d_poly* inpoly, r2d_poly** outpolys, r2d_real coord, r2d_
     r2d_vertex* vertbuffer = inpoly->verts; 
     r2d_int v, np, onv, vcur, vnext, vstart, nright, cside;
     r2d_rvec2 newpos;
-    r2d_int side[R2D_MAX_VERTS];
-    r2d_real sdists[R2D_MAX_VERTS];
+    r2d_int side[KC2D_MAX_VERTS];
+    r2d_real sdists[KC2D_MAX_VERTS];
 
     // calculate signed distances to the clip plane
     nright = 0;
