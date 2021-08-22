@@ -41,7 +41,9 @@
  * and LA-UR-15-26964). Andrei Leonard Nicusan modified the R2D code in 2021: rasterization was
  * optimised for `polyorder = 0` (i.e. only area / zeroth moment); declarations and definitions
  * from the `r2d.h`, `v2d.h` and `r2d.c` were inlined; the power functions used were specialised
- * for single or double precision; variable-length arrays were removed for portability.
+ * for single or double precision; variable-length arrays were removed for portability. For
+ * consistency, the R2D prefix was changed to KC2D; *this does not remove attribution to the
+ * original authors*.
  *
  * All rights for the R2D code go to the original authors of the library, whose copyright notice is
  * included below. A sincere thank you for your work.
@@ -81,11 +83,11 @@ extern "C" {
  *
  * KC2D_NUM_VERTS : number of vertices used to approximate circles / cylinders as polygons.
  * KC2D_MAX_VERTS : maximum number of vertices used in the R2D internal polygon representation.
- * SINGLE_PRECISION : if defined, single-precision floats will be used for calculations.
+ * KC2D_SINGLE_PRECISION : if defined, single-precision floats will be used for calculations.
  */
 #define KC2D_NUM_VERTS 32
 #define KC2D_MAX_VERTS 42
-// #define SINGLE_PRECISION
+// #define KC2D_SINGLE_PRECISION
 
 
 /**
@@ -108,67 +110,68 @@ extern "C" {
 
 /**
  * Some types used by KonigCell2D - especially the geometry-related ones - are borrowed from the
- * R2D library (Powell and Abel, 2015 and LA-UR-15-26964); they are prefixed with `r2d_`. The
- * following declarations are related to R2D. See below them for the KonigCell2D functions.
+ * R2D library (Powell and Abel, 2015 and LA-UR-15-26964); the `r2d_` prefixes were changed to
+ * `kc2d_` for consistency. The following declarations are related to R2D. See below them for the
+ * KonigCell2D functions.
  */
 
 
 /* Real type used in calculations. */
-#ifdef SINGLE_PRECISION
-typedef float r2d_real;
+#ifdef KC2D_SINGLE_PRECISION
+typedef float kc2d_real;
 #else 
-typedef double r2d_real;
+typedef double kc2d_real;
 #endif
 
 
 /* Integer types used for indexing. */
-typedef int32_t r2d_int;
-typedef int64_t r2d_long;
+typedef int32_t kc2d_int;
+typedef int64_t kc2d_long;
 
 
 /* A 2-vector. */
 typedef union {
-	struct {
-		r2d_real x, /* x-component. */
-				 y; /* y-component. */
-	};
-	r2d_real xy[2]; /* Index-based access to components. */
-} r2d_rvec2;
+    struct {
+        kc2d_real x,    /* x-component. */
+                  y;    /* y-component. */
+    };
+    kc2d_real xy[2];    /* Index-based access to components. */
+} kc2d_rvec2;
 
 
 /* An integer 2-vector for grid indexing. */
 typedef union {
-	struct {
-		r2d_int i,  /* x-component. */
-				j;  /* y-component. */
-	};
-	r2d_int ij[2];  /* Index-based access to components. */
-} r2d_dvec2;
+    struct {
+        kc2d_int i,     /* x-component. */
+                 j;     /* y-component. */
+    };
+    kc2d_int ij[2];     /* Index-based access to components. */
+} kc2d_dvec2;
 
 
 /* A plane */
 typedef struct {
-	r2d_rvec2 n;    /* Unit-length normal vector. */
-	r2d_real d;     /* Signed perpendicular distance to the origin. */
-} r2d_plane;
+    kc2d_rvec2 n;       /* Unit-length normal vector. */
+    kc2d_real d;        /* Signed perpendicular distance to the origin. */
+} kc2d_plane;
 
 
 /* A doubly-linked vertex. */
 typedef struct {
-	r2d_int pnbrs[2];   /* Neighbor indices. */
-	r2d_rvec2 pos;      /* Vertex position. */
-} r2d_vertex;
+    kc2d_int pnbrs[2];  /* Neighbor indices. */
+    kc2d_rvec2 pos;     /* Vertex position. */
+} kc2d_vertex;
 
 
 /* A polygon. Can be convex, nonconvex, even multiply-connected. */
 typedef struct {
-	r2d_vertex verts[KC2D_MAX_VERTS];    /* Vertex buffer. */
-	r2d_int nverts;                     /* Number of vertices in the buffer. */
-} r2d_poly;
+    kc2d_vertex verts[KC2D_MAX_VERTS];   /* Vertex buffer. */
+    kc2d_int nverts;                     /* Number of vertices in the buffer. */
+} kc2d_poly;
 
 
-/* Initialise a `r2d_poly` from an array of vertices. */
-void r2d_init_poly(r2d_poly* poly, r2d_rvec2* vertices, r2d_int numverts);
+/* Initialise a `kc2d_poly` from an array of vertices. */
+void kc2d_init_poly(kc2d_poly* poly, kc2d_rvec2* vertices, kc2d_int numverts);
 
 
 
@@ -202,18 +205,13 @@ void r2d_init_poly(r2d_poly* poly, r2d_rvec2* vertices, r2d_int numverts);
  *
  * ylim : (2,) array
  *     The physical range spanned by `grid` in the y-dimension, formatted as [ymin, ymax].
- *
- * Undefined Behaviour
- * -------------------
- * Pointers in this struct must not overlap between themselves; the `restrict` keyword for pointer
- * aliasing was used to allow more compiler optimisations.
  */
 typedef struct {
-    r2d_real    *grid;
-    r2d_real    *igrid;
-    r2d_int     *dims;
-    r2d_real    *xlim;
-    r2d_real    *ylim;
+    kc2d_real   *grid;
+    kc2d_real   *igrid;
+    kc2d_int    *dims;
+    kc2d_real   *xlim;
+    kc2d_real   *ylim;
 } kc2d_pixels;
 
 
@@ -242,17 +240,12 @@ typedef struct {
  *
  * num_particles
  *     The number of particles stored in the struct; see each member's definition above.
- *
- * Undefined Behaviour
- * -------------------
- * Pointers in this struct must not overlap between themselves; the `restrict` keyword for pointer
- * aliasing was used to allow more compiler optimisations.
  */
 typedef struct {
-    r2d_real    *positions;
-    r2d_real    *radii;
-    r2d_real    *factors;
-    r2d_int     num_particles;
+    kc2d_real   *positions;
+    kc2d_real   *radii;
+    kc2d_real   *factors;
+    kc2d_int    num_particles;
 } kc2d_particles;
 
 
@@ -277,7 +270,7 @@ typedef struct {
  *     Each value added to a pixel will be multiplied with the particle-pixel intersection.
  *
  * kc2d_particle
- *     Each value added to a pixel will be multiplied with the particle area.
+ *     Each value added to a pixel will be multiplied with the whole particle area.
  *
  * kc2d_one
  *     Each value will be added to a pixel as-is, with no relation to the particle / pixel
@@ -294,7 +287,7 @@ typedef enum {
 void            kc2d_dynamic(kc2d_pixels            *pixels,
                              const kc2d_particles   *particles,
                              const kc2d_mode        mode,
-                             const r2d_int          omit_last);
+                             const kc2d_int         omit_last);
 
 
 void            kc2d_static(kc2d_pixels             *pixels,
@@ -302,43 +295,45 @@ void            kc2d_static(kc2d_pixels             *pixels,
                             const kc2d_mode         mode);
 
 
-void            kc2d_rasterize(r2d_poly             *poly,
-                               const r2d_real       area,
-                               const r2d_real       factor,
+void            kc2d_rasterize(kc2d_poly            *poly,
+                               const kc2d_real      area,
+                               const kc2d_real      factor,
                                kc2d_pixels          *pixels,
-                               r2d_real             *local_grid,
+                               kc2d_real            *local_grid,
                                const kc2d_mode      mode);
 
 
-/*
- * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices and save it as a `r2d_poly`.
+/**
+ * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices. The input `verts` must be
+ * pre-allocated; it will be set in the function. Returns analytical area.
  */
-r2d_real        kc2d_circle(r2d_poly                *poly,
-                            const r2d_rvec2         centre,
-                            const r2d_real          radius);
+kc2d_real        kc2d_circle(kc2d_vertex verts[KC2D_NUM_VERTS],
+                             const kc2d_rvec2 centre,
+                             const kc2d_real radius);
 
 
 /**
- * Approximate a 2D cylinder (i.e. the convex hull of two circles) with `KC2D_NUM_VERTS` vertices
- * and save it as a `r2d_poly`. Omit the second circle's area. Return the full cylinder's area.
+ * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
+ * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `verts` must be
+ * pre-allocated; it will be set in the function. Returns the analytical full cylinder's area.
  */
-r2d_real        kc2d_half_cylinder(r2d_poly         *poly,
-                                   const r2d_rvec2  p1,
-                                   const r2d_rvec2  p2,
-                                   const r2d_real   r1,
-                                   const r2d_real   r2);
+kc2d_real        kc2d_half_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
+                                    const kc2d_rvec2 p1,
+                                    const kc2d_rvec2 p2,
+                                    const kc2d_real r1,
+                                    const kc2d_real r2);
 
 
 /**
- * Approximate a 2D cylinder (i.e. the convex hull of two circles) with `KC2D_NUM_VERTS` vertices
- * and save it as a `r2d_poly`. Omit the second circle's area. Return the full cylinder's area.
+ * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
+ * with `KC2D_NUM_VERTS` vertices. The input `verts` must be pre-allocated; it will be set in the
+ * function. Returns the analytical full cylinder's area.
  */
-r2d_real        kc2d_cylinder(r2d_poly              *poly,
-                              const r2d_rvec2       p1,
-                              const r2d_rvec2       p2,
-                              const r2d_real        r1,
-                              const r2d_real        r2);
-
+kc2d_real        kc2d_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
+                               const kc2d_rvec2 p1,
+                               const kc2d_rvec2 p2,
+                               const kc2d_real r1,
+                               const kc2d_real r2);
 
     
 #ifdef __cplusplus
