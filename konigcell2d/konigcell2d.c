@@ -109,6 +109,8 @@ void kc2d_rasterize_local(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_g
 #endif
 
 
+
+
 /* Absolute value */
 kc2d_real       kc2d_fabs(kc2d_real x)
 {
@@ -400,7 +402,7 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2 || particles->num_particles < 2)
     {
         fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells, and there should "
-                "be at least two particle positions.");
+                "be at least two particle positions.\n\n");
         return;
     }
 
@@ -787,7 +789,7 @@ void            kc2d_static(kc2d_pixels             *pixels,
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2 || particles->num_particles < 1)
     {
         fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells, and there should "
-                "be at least one particle position.");
+                "be at least one particle position.\n\n");
         return;
     }
 
@@ -963,7 +965,7 @@ void            kc2d_rasterize(kc2d_poly            *poly,
     // Some cheap input parameter checks
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2)
     {
-        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells");
+        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells.\n\n");
         return;
     }
 

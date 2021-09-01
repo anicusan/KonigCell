@@ -66,7 +66,6 @@
  */
 
 
-
 #include "konigcell3d.h"
 #include "konigcell3d_generated.h"
 
@@ -87,6 +86,8 @@ void kc3d_rasterize_local(kc3d_poly* poly, kc3d_dvec3 ibox[2], kc3d_real* dest_g
 void kc3d_split_coord(kc3d_poly* inpoly, kc3d_poly** outpolys, kc3d_real coord, kc3d_int ax);
 void kc3d_reduce(kc3d_poly *poly, kc3d_real *moments);
 void kc3d_translate(kc3d_poly *poly, kc3d_rvec3 shift);
+
+
 
 
 #define KC3D_PI 3.14159265358979323846
@@ -128,6 +129,8 @@ void kc3d_translate(kc3d_poly *poly, kc3d_rvec3 shift);
         vx[2].y = v.x;                              \
         vx[2].z = 0.;                               \
     }
+
+
 
 
 /* Absolute value */
@@ -505,7 +508,7 @@ void            kc3d_dynamic(kc3d_voxels            *voxels,
         particles->num_particles < 2)
     {
         fprintf(stderr, "[ERROR]: The input grid should have at least 2x2x2 cells, and there "
-                "should be at least two particle positions.");
+                "should be at least two particle positions.\n\n");
         return;
     }
 
@@ -608,7 +611,7 @@ void            kc3d_static(kc3d_voxels             *voxels,
         particles->num_particles < 2)
     {
         fprintf(stderr, "[ERROR]: The input grid should have at least 2x2x2 cells, and there "
-                "should be at least two particle positions.");
+                "should be at least two particle positions.\n\n");
         return;
     }
 
@@ -686,7 +689,7 @@ void            kc3d_rasterize(kc3d_poly            *poly,
     // Some cheap input parameter checks
     if (voxels->dims[0] < 2 || voxels->dims[1] < 2 || voxels->dims[2] < 2)
     {
-        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2x2 cells");
+        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2x2 cells\n\n");
         return;
     }
 
