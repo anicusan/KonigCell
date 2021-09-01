@@ -56,6 +56,9 @@ def requirements(filename):
 # What packages are required for this module to be executed?
 required = requirements('requirements.txt')
 
+# What packages are optional?
+extras = dict(docs = requirements('requirements_extra.txt'))
+
 # Load the package's __version__.py module as a dictionary.
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -173,6 +176,7 @@ setuptools.setup(
     url = url,
 
     install_requires = required,
+    extras_requires = extras,
     include_package_data = True,
     packages = setuptools.find_packages(),
 
