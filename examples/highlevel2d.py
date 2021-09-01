@@ -11,19 +11,13 @@ import konigcell as kc
 import plotly.graph_objs as go
 
 
-def generate(shape, vmin=0, vmax=1):
-    '''Return an array of `shape` with random values between `vmin` and `vmax`.
-    '''
-    return vmin + np.random.random(shape) * (vmax - vmin)
-
-
 # -----------------------------------------------------------------------------
 # Generate random 2D particles / trajectory
-np.random.seed(0)
+rng = np.random.default_rng(0)
 
 num_particles = 100
-positions = generate((num_particles, 2), -10, 10)
-radii = generate(num_particles, 0.1, 2)
+positions = rng.uniform(-10, 10, (num_particles, 2))
+radii = rng.uniform(0.1, 2, num_particles)
 
 
 # -----------------------------------------------------------------------------

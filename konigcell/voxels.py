@@ -9,17 +9,22 @@
 import  pickle
 import  textwrap
 
-import  numpy                   as      np
+import  numpy                       as  np
 
 # Plotting is optional
 try:
-    import  plotly.graph_objects    as      go
+    import  plotly.graph_objects    as  go
 except ImportError:
     pass
 
 try:
     import  matplotlib
-    import  matplotlib.pyplot       as      plt
+    import  matplotlib.pyplot       as  plt
+except ImportError:
+    pass
+
+try:
+    import  pyvista                 as  pv
 except ImportError:
     pass
 
@@ -525,6 +530,27 @@ class Voxels(np.ndarray):
         return fig, ax
 
 
+    def plot_volumetric(
+        self,
+        condition = lambda voxels: voxels > 0,
+    ):
+        vox = self.voxels.copy(order = "F")
+        vox[~(condition(vox))] = 0.
+
+        # You need to install PyVista to use this function!
+        grid = pv.UniformGrid()
+        grid.dimensions = np.array(vox.shape) + 1
+        grid.origin = self.voxel_lower
+        grid.spacing = self.voxel_size
+        grid.cell_arrays["values"] = vox.flatten(order="F")
+
+        # Create PyVista volumetric / voxel plot with an interactive clipper
+        fig = pv.Plotter()
+        fig.add_mesh_clip_plane(grid)
+
+        return fig
+
+
     def cube_trace(
         self,
         index,
@@ -613,6 +639,7 @@ class Voxels(np.ndarray):
                 color = "rgb({},{},{})".format(c[0], c[1], c[2])
             )
 
+        # You need to install Plotly to use this function!
         return go.Mesh3d(cube)
 
 
@@ -792,6 +819,7 @@ class Voxels(np.ndarray):
             marker = marker,
         )
 
+        # You need to install Plotly to use this function!
         return go.Scatter3d(voxels)
 
 
@@ -900,6 +928,7 @@ class Voxels(np.ndarray):
             transpose = transpose,
         )
 
+        # You need to install Plotly to use this function!
         return go.Heatmap(heatmap)
 
 

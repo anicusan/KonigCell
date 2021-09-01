@@ -11,19 +11,13 @@ import konigcell as kc
 import plotly.graph_objs as go
 
 
-def generate(shape, vmin=0, vmax=1):
-    '''Return an array of `shape` with random values between `vmin` and `vmax`.
-    '''
-    return vmin + np.random.random(shape) * (vmax - vmin)
-
-
 # -----------------------------------------------------------------------------
 # Generate random 3D particles / trajectory
-np.random.seed(0)
+rng = np.random.default_rng(0)
 
 num_particles = 100
-positions = generate((num_particles, 3), -10, 10)
-radii = generate(num_particles, 0.1, 2)
+positions = rng.uniform(-10, 10, (num_particles, 3))
+radii = rng.uniform(0.1, 2, num_particles)
 
 
 # -----------------------------------------------------------------------------
@@ -40,6 +34,9 @@ fig.add_trace(voxels.scatter_trace())
 kc.format_fig(fig)
 fig.show()
 
+# Interactive volumetric plot with PyVista
+# voxels.plot_volumetric().show()
+
 
 # -----------------------------------------------------------------------------
 # Voxellise the 3D particles' individual / static locations
@@ -54,3 +51,6 @@ fig2.add_trace(voxels2.scatter_trace())
 
 kc.format_fig(fig2)
 fig2.show()
+
+# Interactive volumetric plot with PyVista
+# voxels2.plot_volumetric().show()
