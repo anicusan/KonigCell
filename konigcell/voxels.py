@@ -11,9 +11,17 @@ import  textwrap
 
 import  numpy                   as      np
 
-import  plotly.graph_objects    as      go
-import  matplotlib
-import  matplotlib.pyplot       as      plt
+# Plotting is optional
+try:
+    import  plotly.graph_objects    as      go
+except ImportError:
+    pass
+
+try:
+    import  matplotlib
+    import  matplotlib.pyplot       as      plt
+except ImportError:
+    pass
 
 
 class Voxels(np.ndarray):
