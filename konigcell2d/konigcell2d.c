@@ -84,7 +84,7 @@ void kc2d_clamp_ibox(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_dvec2 clampbox[2]
 void kc2d_clip(kc2d_poly* poly, kc2d_plane* planes, kc2d_int nplanes);
 void kc2d_reduce(kc2d_poly* poly, kc2d_real* moments);
 void kc2d_split_coord(kc2d_poly* inpoly, kc2d_poly** outpolys, kc2d_real coord, kc2d_int ax);
-void _rasterize(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_rvec2 d);
+void kc2d_rasterize_local(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_rvec2 d);
 
 
 
@@ -192,15 +192,19 @@ kc2d_real       kc2d_circular_segment(kc2d_real r, kc2d_real h)
 
 
 /**
- * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices. The input `verts` must be
- * pre-allocated; it will be set in the function. Returns analytical area.
+ * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices. The input `poly` must be
+ * pre-allocated; it will be initialised by this function. Returns analytical area.
  */
-kc2d_real       kc2d_circle(kc2d_vertex verts[KC2D_NUM_VERTS],
+kc2d_real       kc2d_circle(kc2d_poly *poly,
                             const kc2d_rvec2 centre,
                             const kc2d_real radius)
 {
     kc2d_real    inc;
     kc2d_int     i;
+
+    // Initialise neighbour indices; vertices will be set directly
+    kc2d_init_poly(poly, NULL, KC2D_NUM_VERTS);
+    kc2d_vertex *verts = poly->verts;
 
     inc = 2 * KC2D_PI / KC2D_NUM_VERTS;
     for (i = 0; i < KC2D_NUM_VERTS; ++i)
@@ -215,10 +219,11 @@ kc2d_real       kc2d_circle(kc2d_vertex verts[KC2D_NUM_VERTS],
 
 /**
  * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
- * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `verts` must be
- * pre-allocated; it will be set in the function. Returns the analytical full cylinder's area.
+ * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `poly` must be
+ * pre-allocated; it will be initialised by this function. Returns the analytical full cylinder's
+ * area.
  */
-kc2d_real       kc2d_half_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
+kc2d_real       kc2d_half_cylinder(kc2d_poly *poly,
                                    const kc2d_rvec2 p1,
                                    const kc2d_rvec2 p2,
                                    const kc2d_real r1,
@@ -230,6 +235,10 @@ kc2d_real       kc2d_half_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
 
     kc2d_int     NUM_VERTS_2 = KC2D_NUM_VERTS / 2;
     kc2d_int     i;
+
+    // Initialise neighbour indices; vertices will be set directly
+    kc2d_init_poly(poly, NULL, KC2D_NUM_VERTS);
+    kc2d_vertex *verts = poly->verts;
 
     // Get the angle between [0, 2pi] using an atan2 trick (atan2 returns [-pi, pi])
     ang = KC2D_PI - KC2D_ATAN2(p2.y - p1.y, -(p2.x - p1.x));
@@ -257,10 +266,10 @@ kc2d_real       kc2d_half_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
 
 /**
  * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
- * with `KC2D_NUM_VERTS` vertices. The input `verts` must be pre-allocated; it will be set in the
- * function. Returns the analytical full cylinder's area.
+ * with `KC2D_NUM_VERTS` vertices. The input `poly` must be pre-allocated; it will be initialised
+ * by this function. Returns the analytical full cylinder's area.
  */
-kc2d_real       kc2d_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
+kc2d_real       kc2d_cylinder(kc2d_poly *poly,
                               const kc2d_rvec2 p1,
                               const kc2d_rvec2 p2,
                               const kc2d_real r1,
@@ -272,6 +281,10 @@ kc2d_real       kc2d_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
 
     kc2d_int     NUM_VERTS_2 = KC2D_NUM_VERTS / 2;
     kc2d_int     i;
+
+    // Initialise neighbour indices; vertices will be set directly
+    kc2d_init_poly(poly, NULL, KC2D_NUM_VERTS);
+    kc2d_vertex *verts = poly->verts;
 
     // Get the angle between [0, 2pi] using an atan2 trick (atan2 returns [-pi, pi])
     ang = KC2D_PI - KC2D_ATAN2(p2.y - p1.y, -(p2.x - p1.x));
@@ -306,13 +319,11 @@ kc2d_real       kc2d_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
  * spanning the rectangular approximation of the polygon.
  *
  * The area ratio is multiplied by `factor` and *added* onto the global `grid`.
- * If `igrid` is not NULL, each pixel intersected by the polygon has 1 added to `igrid`.
  * The local grid `lgrid` is reinitialised to zero at the end of the function.
  */
 void            kc2d_rasterize_ll(kc2d_poly *restrict    poly,
                                   kc2d_real              area,
                                   kc2d_real *restrict    grid,
-                                  kc2d_real *restrict    igrid,
                                   kc2d_real *restrict    lgrid,
                                   const kc2d_int         dims[2],
                                   const kc2d_rvec2       grid_size,
@@ -333,7 +344,7 @@ void            kc2d_rasterize_ll(kc2d_poly *restrict    poly,
     ly = ibox[1].j - ibox[0].j;
 
     // Rasterize the polygon onto the local grid and compute the total area occupied by `poly`
-    _rasterize(poly, ibox, lgrid, grid_size);
+    kc2d_rasterize_local(poly, ibox, lgrid, grid_size);
 
     // Add values from the local grid to the global one, depending on the pixellisation `mode`
     if (mode == kc2d_ratio)
@@ -366,13 +377,6 @@ void            kc2d_rasterize_ll(kc2d_poly *restrict    poly,
                     grid[i * dims[1] + j] += factor;
     }
 
-    // Add 1 for each pixel that was intersected if `intersections` are requested (i.e. not NULL)
-    if (igrid != NULL)
-        for (i = ibox[0].i; i < ibox[1].i; ++i)
-            for (j = ibox[0].j; j < ibox[1].j; ++j)
-                if (lgrid[(i - ibox[0].i) * ly + j - ibox[0].j] != 0.)
-                    igrid[i * dims[1] + j] += 1;
-
     // Reinitialise the written local grid to zero
     for (i = 0; i < lx * ly; ++i)
         lgrid[i] = 0.;
@@ -395,14 +399,13 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     // Some cheap input parameter checks
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2 || particles->num_particles < 2)
     {
-        perror("[ERROR]: The input grid should have at least 2x2 cells, and there should be at "
-               "least two particle positions.");
+        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells, and there should "
+                "be at least two particle positions.");
         return;
     }
 
     // Extract members from `pixels` and `particles`
     kc2d_real        *grid = pixels->grid;
-    kc2d_real        *igrid = pixels->igrid;
     const kc2d_int   *dims = pixels->dims;
     const kc2d_real  *xlim = pixels->xlim;
     const kc2d_real  *ylim = pixels->ylim;
@@ -423,14 +426,13 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     kc2d_real       ysize = ylim[1] - ylim[0];
 
     kc2d_rvec2      grid_size = {{xsize / dims[0], ysize / dims[1]}};
-    kc2d_real       rsmall = 1.0e-10 * (grid_size.x < grid_size.y ? grid_size.x : grid_size.y);
+    kc2d_real       rsmall = 1.0e-6 * (grid_size.x < grid_size.y ? grid_size.x : grid_size.y);
 
     // Local grid which will be used for rasterising
     kc2d_real       *lgrid = (kc2d_real*)KC2D_CALLOC((size_t)dims[0] * dims[1], sizeof(kc2d_real));
 
     // Polygonal shapes used for the particle trajectories
     kc2d_poly       cylinder;
-    kc2d_init_poly(&cylinder, NULL, KC2D_NUM_VERTS);
 
     // Copy `positions` to new local array and translate them such that the grid origin is (0, 0)
     kc2d_rvec2      *trajectory = (kc2d_rvec2*)KC2D_MALLOC(sizeof(kc2d_rvec2) * num_particles);
@@ -442,31 +444,42 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     }
 
     // Rasterize particle trajectories: create a polygonal approximation of the convex hull of the
-    // two particle locations, minus the second circle's area (it added in the previous iteration)
+    // two particle locations, minus the second circle's area (was added in the previous iteration)
     for (ip = 0; ip < num_particles - 2; ++ip)
+    {
+        // Skip NaNs - useful for jumping over different trajectories
+        if (isnan(trajectory[ip].x) || isnan(trajectory[ip + 1].x) ||
+            isnan(trajectory[ip].y) || isnan(trajectory[ip + 1].y))
+            continue;
+
+        r1 = (radii == NULL ? rsmall : radii[ip]);
+        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
+        factor = (factors == NULL ? 1 : factors[ip]);
+
+        // If this is the last segment from a trajectory (i.e. next point is NaN), pixellise full
+        // cylinder
+        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y))
+            area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+        else
+            area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+
+        kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
+    }
+
+    // The last trajectory segment is pixellised as a full cylinder if not omit_last
+    if (!isnan(trajectory[ip].x) && !isnan(trajectory[ip + 1].x) &&
+        !isnan(trajectory[ip].y) && !isnan(trajectory[ip + 1].y))
     {
         r1 = (radii == NULL ? rsmall : radii[ip]);
         r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
 
-        area = kc2d_half_cylinder(cylinder.verts, trajectory[ip], trajectory[ip + 1], r1, r2);
-        kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
-    }
+        if (omit_last)
+            area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+        else
+            area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
 
-    // The last trajectory segment is pixllised as a full cylinder if not omit_last
-    r1 = (radii == NULL ? rsmall : radii[ip]);
-    r2 = (radii == NULL ? rsmall : radii[ip + 1]);
-    factor = (factors == NULL ? 1 : factors[ip]);
-
-    if (omit_last)
-    {
-        area = kc2d_half_cylinder(cylinder.verts, trajectory[ip], trajectory[ip + 1], r1, r2);
-        kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
-    }
-    else
-    {
-        area = kc2d_cylinder(cylinder.verts, trajectory[ip], trajectory[ip + 1], r1, r2);
-        kc2d_rasterize_ll(&cylinder, area, grid, igrid, lgrid, dims, grid_size, factor, mode);
+        kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
     }
 
     KC2D_FREE(lgrid);
@@ -574,14 +587,14 @@ kc2d_real       kc2d_one_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec2
     // Area of the circular segment
     area += kc2d_circular_segment(r, h);
 
-    // Area of the triangle
+    // Area of the right triangle
     area += kc2d_dist(xc, yc, x1, y1) * kc2d_dist(xc, yc, x2, y2) / 2;
 
     return area;
 }
 
 
-kc2d_real        kc2d_two_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec2 pixu,
+kc2d_real       kc2d_two_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec2 pixu,
                                 kc2d_rvec2 pos, kc2d_real r)
 {
     // The bounded corner coordinates
@@ -671,7 +684,7 @@ kc2d_real        kc2d_two_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec
 }
 
 
-kc2d_real        kc2d_three_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec2 pixu,
+kc2d_real       kc2d_three_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rvec2 pixu,
                                   kc2d_rvec2 pos, kc2d_real r)
 {
     kc2d_real        xc1 = 0, yc1 = 0;       // Bounded corner 1
@@ -760,7 +773,7 @@ kc2d_real        kc2d_three_corner(kc2d_int corners[4], kc2d_rvec2 pixl, kc2d_rv
 }
 
 
-kc2d_real        kc2d_four_corner(kc2d_rvec2 pixl, kc2d_rvec2 pixu)
+kc2d_real       kc2d_four_corner(kc2d_rvec2 pixl, kc2d_rvec2 pixu)
 {
     return (pixu.x - pixl.x) * (pixu.y - pixl.y);
 }
@@ -773,14 +786,13 @@ void            kc2d_static(kc2d_pixels             *pixels,
     // Some cheap input parameter checks
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2 || particles->num_particles < 1)
     {
-        perror("[ERROR]: The input grid should have at least 2x2 cells, and there should be at "
-               "least one particle position.");
+        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells, and there should "
+                "be at least one particle position.");
         return;
     }
 
     // Extract members from `pixels` and `particles`
     kc2d_real        *grid = pixels->grid;
-    kc2d_real        *igrid = pixels->igrid;
     const kc2d_int   *dims = pixels->dims;
     const kc2d_real  *xlim = pixels->xlim;
     const kc2d_real  *ylim = pixels->ylim;
@@ -934,9 +946,6 @@ void            kc2d_static(kc2d_pixels             *pixels,
                         grid[jp * dims[1] + kp] += f * (KC2D_PI * r * r);
                     else if (mode == kc2d_one)
                         grid[jp * dims[1] + kp] += f;
-
-                    if (igrid != NULL)
-                        igrid[jp * dims[1] + kp] += 1.;
                 }
             }
         }
@@ -954,14 +963,12 @@ void            kc2d_rasterize(kc2d_poly            *poly,
     // Some cheap input parameter checks
     if (pixels->dims[0] < 2 || pixels->dims[1] < 2)
     {
-        perror("[ERROR]: The input grid should have at least 2x2 cells, and there should be at "
-               "least two particle positions.");
+        fprintf(stderr, "[ERROR]: The input grid should have at least 2x2 cells");
         return;
     }
 
     // Extract members from `pixels` and `particles`
     kc2d_real        *grid = pixels->grid;
-    kc2d_real        *igrid = pixels->igrid;
     const kc2d_int   *dims = pixels->dims;
     const kc2d_real  *xlim = pixels->xlim;
     const kc2d_real  *ylim = pixels->ylim;
@@ -980,11 +987,11 @@ void            kc2d_rasterize(kc2d_poly            *poly,
     if (local_grid == NULL)
     {
         local_grid = (kc2d_real*)KC2D_CALLOC((size_t)dims[0] * dims[1], sizeof(kc2d_real));
-        kc2d_rasterize_ll(poly, area, grid, igrid, local_grid, dims, grid_size, factor, mode);
+        kc2d_rasterize_ll(poly, area, grid, local_grid, dims, grid_size, factor, mode);
         KC2D_FREE(local_grid);
     }
     else
-        kc2d_rasterize_ll(poly, area, grid, igrid, local_grid, dims, grid_size, factor, mode);
+        kc2d_rasterize_ll(poly, area, grid, local_grid, dims, grid_size, factor, mode);
 }
 
 
@@ -1286,7 +1293,10 @@ void kc2d_split_coord(kc2d_poly* inpoly, kc2d_poly** outpolys, kc2d_real coord, 
 }
 
 
-void _rasterize(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_rvec2 d) {
+#define KC2D_STACKSIZE 100
+
+
+void kc2d_rasterize_local(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_rvec2 d) {
 
     kc2d_int i, spax, dmax, nstack, siz;
     kc2d_poly* children[2];
@@ -1307,14 +1317,15 @@ void _rasterize(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_
         kc2d_dvec2 ibox[2];
     } stack_elem;
 
-    // Use stack-allocated VLA if supported, otherwise heap-allocate
-#if defined (__STDC_NO_VLA__) || defined (_MSC_VER)
-    stack_elem *stack = (stack_elem*)KC2D_MALLOC(sizeof(stack_elem) * (
-        (kc2d_int)(ceil(log2(gridsz.i))+ceil(log2(gridsz.j))+1)
-    ));
-#else
-    stack_elem stack[(kc2d_int)(ceil(log2(gridsz.i))+ceil(log2(gridsz.j))+1)];
-#endif
+    // Small stack optimisation - only heap-allocate if needed_stacksize > KC2D_STACKSIZE
+    stack_elem small_stack[KC2D_STACKSIZE];
+    stack_elem *stack;
+
+    kc2d_int needed_stacksize = (kc2d_int)(ceil(log2(gridsz.i))+ceil(log2(gridsz.j))+1);
+    if (KC2D_STACKSIZE < needed_stacksize)
+        stack = (stack_elem*)KC2D_MALLOC(sizeof(stack_elem) * needed_stacksize);
+    else
+        stack = small_stack;
 
     // push the original polyhedron onto the stack
     // and recurse until child polyhedra occupy single rasters
@@ -1368,8 +1379,7 @@ void _rasterize(kc2d_poly* poly, kc2d_dvec2 ibox[2], kc2d_real* dest_grid, kc2d_
         nstack += 2;
     }
 
-    // If VLAs are not supported, the `stack` was heap-allocated; free it
-#if defined (__STDC_NO_VLA__) || defined (_MSC_VER)
-    KC2D_FREE(stack);
-#endif
+    // If we heap-allocated `stack`, free it
+    if (KC2D_STACKSIZE < needed_stacksize)
+        KC2D_FREE(stack);
 }

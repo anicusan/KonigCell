@@ -191,11 +191,6 @@ void kc2d_init_poly(kc2d_poly* poly, kc2d_rvec2* vertices, kc2d_int numverts);
  *     A flattened C-ordered 2D array of pixels; has `dims[0] * dims[1]` elements. The pixel
  *     [i, j] is at index [i * dims[1] + j]. Must have at least 2x2 pixels; non-nullable.
  *
- * igrid : (N*M,) array or NULL
- *     A flattened C-ordered 2D array with the same shape as `grid`. If not NULL, the number of
- *     particles whose trajectories intersected each pixel is saved in the corresponding
- *     `igrid` cell. Must have the same number of elements as `grid`. Ignored if NULL.
- *
  * dims : (2,) array
  *     The number of rows / elements in the x-dimension (dims[0]) and the number of columns /
  *     elements in the y-dimension (dims[1]) in `grid`.
@@ -208,7 +203,6 @@ void kc2d_init_poly(kc2d_poly* poly, kc2d_rvec2* vertices, kc2d_int numverts);
  */
 typedef struct {
     kc2d_real   *grid;
-    kc2d_real   *igrid;
     kc2d_int    *dims;
     kc2d_real   *xlim;
     kc2d_real   *ylim;
@@ -229,9 +223,9 @@ typedef struct {
  *     Particle 2D locations, in chronological order, formatted as [x0, y0, x1, y1, ...]; has
  *     length `2 * num_particles`. Must have at least two locations; non-nullable.
  *
- * radii : (num_particles,) array
+ * radii : (num_particles,) array or NULL
  *     The radius of each particle, formatted as [r0, r1, ...]; has length `num_particles`;
- *     non-nullable.
+ *     if NULL, the particle trajectories are taken as extremely thin lines.
  *
  * factors : (num_particles,) array or NULL
  *     Factors to multiply each trajectory, formatted as [f0, f1, ...]; e.g. the trajectory from
@@ -304,38 +298,39 @@ void            kc2d_rasterize(kc2d_poly            *poly,
 
 
 /**
- * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices. The input `verts` must be
- * pre-allocated; it will be set in the function. Returns analytical area.
+ * Approximate a circle as a polygon with `KC2D_NUM_VERTS` vertices. The input `poly` must be
+ * pre-allocated; it will be initialised by this function. Returns analytical area.
  */
-kc2d_real        kc2d_circle(kc2d_vertex verts[KC2D_NUM_VERTS],
-                             const kc2d_rvec2 centre,
-                             const kc2d_real radius);
+kc2d_real       kc2d_circle(kc2d_poly *poly,
+                            const kc2d_rvec2 centre,
+                            const kc2d_real radius);
 
 
 /**
  * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
- * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `verts` must be
- * pre-allocated; it will be set in the function. Returns the analytical full cylinder's area.
+ * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `poly` must be
+ * pre-allocated; it will be initialised by this function. Returns the analytical full cylinder's
+ * area.
  */
-kc2d_real        kc2d_half_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
-                                    const kc2d_rvec2 p1,
-                                    const kc2d_rvec2 p2,
-                                    const kc2d_real r1,
-                                    const kc2d_real r2);
+kc2d_real       kc2d_half_cylinder(kc2d_poly *poly,
+                                   const kc2d_rvec2 p1,
+                                   const kc2d_rvec2 p2,
+                                   const kc2d_real r1,
+                                   const kc2d_real r2);
 
 
 /**
  * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
- * with `KC2D_NUM_VERTS` vertices. The input `verts` must be pre-allocated; it will be set in the
- * function. Returns the analytical full cylinder's area.
+ * with `KC2D_NUM_VERTS` vertices. The input `poly` must be pre-allocated; it will be initialised
+ * by this function. Returns the analytical full cylinder's area.
  */
-kc2d_real        kc2d_cylinder(kc2d_vertex verts[KC2D_NUM_VERTS],
-                               const kc2d_rvec2 p1,
-                               const kc2d_rvec2 p2,
-                               const kc2d_real r1,
-                               const kc2d_real r2);
+kc2d_real       kc2d_cylinder(kc2d_poly *poly,
+                              const kc2d_rvec2 p1,
+                              const kc2d_rvec2 p2,
+                              const kc2d_real r1,
+                              const kc2d_real r2);
 
-    
+
 #ifdef __cplusplus
 }
 #endif
