@@ -72,7 +72,7 @@ cythonize_kw = dict(language_level = 3)
 # based on the compiler used in `BuildExtCompilerSpecific`
 cy_extension_kw = dict()
 cy_extension_kw['extra_compile_args'] = [
-    '-Ofast', '-flto', '/O2', '/fp:fast', '/GL'
+    '-O3', '-flto', '/O2', '/GL'
 ]
 cy_extension_kw['extra_link_args'] = ['-flto', '/LTCG']
 cy_extension_kw['include_dirs'] = [np.get_include()]
@@ -81,6 +81,11 @@ cy_extensions = [
     setuptools.Extension(
         'konigcell.kc2d',
         ['konigcell/kc2d.pyx'],
+        **cy_extension_kw
+    ),
+    setuptools.Extension(
+        'konigcell.kc3d',
+        ['konigcell/kc3d.pyx'],
         **cy_extension_kw
     ),
 ]

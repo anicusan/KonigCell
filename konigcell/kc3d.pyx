@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File   : kc2d.pyx
+# File   : kc3d.pyx
 # License: MIT
 # Author : Andrei Leonard Nicusan <a.l.nicusan@bham.ac.uk>
-# Date   : 20.05.2021
+# Date   : 30.08.2021
 
 
 # cython: language_level=3
@@ -19,70 +19,74 @@ from libc.stdint cimport int32_t
 cimport numpy as np
 
 
-cdef extern from "../konigcell2d/konigcell2d.h":
-    ctypedef struct kc2d_pixels:
+cdef extern from "../konigcell3d/konigcell3d.h":
+    ctypedef struct kc3d_voxels:
         double  *grid
         int32_t *dims
         double  *xlim
         double  *ylim
+        double  *zlim
 
 
-    ctypedef struct kc2d_particles:
+    ctypedef struct kc3d_particles:
         double  *positions
         double  *radii
         double  *factors
         int32_t num_particles
 
 
-    ctypedef enum kc2d_mode:
-        kc2d_ratio = 0
-        kc2d_intersection = 1
-        kc2d_particle = 2
-        kc2d_one = 3
+    ctypedef enum kc3d_mode:
+        kc3d_ratio = 0
+        kc3d_intersection = 1
+        kc3d_particle = 2
+        kc3d_one = 3
 
 
-    void kc2d_dynamic(
-        kc2d_pixels             *pixels,
-        const kc2d_particles    *particles,
-        const kc2d_mode         mode,
+    void kc3d_dynamic(
+        kc3d_voxels             *voxels,
+        const kc3d_particles    *particles,
+        const kc3d_mode         mode,
         const int32_t           omit_last,
     ) nogil
 
 
-    void kc2d_static(
-        kc2d_pixels             *pixels,
-        const kc2d_particles    *particles,
-        const kc2d_mode         mode,
+    void kc3d_static(
+        kc3d_voxels             *voxels,
+        const kc3d_particles    *particles,
+        const kc3d_mode         mode,
     ) nogil
 
 
-cdef extern from "../konigcell2d/konigcell2d.c":
+cdef extern from "../konigcell3d/konigcell3d.c":
     # C is included here so that it doesn't need to be compiled externally
     pass
 
 
-cpdef np.ndarray[double, ndim=2] dynamic2d(
-    np.ndarray[double, ndim=2]  grid,
+cpdef np.ndarray[double, ndim=3] dynamic3d(
+    np.ndarray[double, ndim=3]  grid,
     const double[:]             xlim,
     const double[:]             ylim,
+    const double[:]             zlim,
     const double[:, :]          positions,
     const int32_t               mode,
     const double[:]             radii = None,
     const double[:]             factors = None,
     bint                        omit_last = False,
 ):
-    cdef int32_t        dims[2]
-    cdef kc2d_pixels    pixels
-    cdef kc2d_particles particles
+    cdef int32_t        dims[3]
+    cdef kc3d_voxels    voxels
+    cdef kc3d_particles particles
 
     with nogil:
         dims[0] = grid.shape[0]
         dims[1] = grid.shape[1]
+        dims[2] = grid.shape[1]
 
-        pixels.grid = &grid[0, 0]
-        pixels.dims = &dims[0]
-        pixels.xlim = &xlim[0]
-        pixels.ylim = &ylim[0]
+        voxels.grid = &grid[0, 0, 0]
+        voxels.dims = &dims[0]
+        voxels.xlim = &xlim[0]
+        voxels.ylim = &ylim[0]
+        voxels.zlim = &zlim[0]
 
         particles.positions = &positions[0, 0]
         particles.radii = &radii[0] if radii is not None else NULL
@@ -93,38 +97,41 @@ cpdef np.ndarray[double, ndim=2] dynamic2d(
             raise ValueError((
                 f"The input `mode` must be between 0 and 3! Received `{mode}`.\n"
                 "Help:\n"
-                "    kc.RATIO = 0          (= kc2d_ratio)\n"
-                "    kc.INTERSECTION = 1   (= kc2d_intersection)\n"
-                "    kc.PARTICLE = 2       (= kc2d_particle)\n"
-                "    kc.ONE = 3            (= kc2d_one)\n"
+                "    kc.RATIO = 0          (= kc3d_ratio)\n"
+                "    kc.INTERSECTION = 1   (= kc3d_intersection)\n"
+                "    kc.PARTICLE = 2       (= kc3d_particle)\n"
+                "    kc.ONE = 3            (= kc3d_one)\n"
             ))
 
-        kc2d_dynamic(&pixels, &particles, <kc2d_mode>mode, <int32_t>omit_last)
+        kc3d_dynamic(&voxels, &particles, <kc3d_mode>mode, <int32_t>omit_last)
 
     return grid
 
 
-cpdef np.ndarray[double, ndim=2] static2d(
-    np.ndarray[double, ndim=2]  grid,
+cpdef np.ndarray[double, ndim=3] static3d(
+    np.ndarray[double, ndim=3]  grid,
     const double[:]             xlim,
     const double[:]             ylim,
+    const double[:]             zlim,
     const double[:, :]          positions,
     const int32_t               mode,
     const double[:]             radii = None,
     const double[:]             factors = None,
 ):
-    cdef int32_t        dims[2]
-    cdef kc2d_pixels    pixels
-    cdef kc2d_particles particles
+    cdef int32_t        dims[3]
+    cdef kc3d_voxels    voxels
+    cdef kc3d_particles particles
 
     with nogil:
         dims[0] = grid.shape[0]
         dims[1] = grid.shape[1]
+        dims[2] = grid.shape[2]
 
-        pixels.grid = &grid[0, 0]
-        pixels.dims = &dims[0]
-        pixels.xlim = &xlim[0]
-        pixels.ylim = &ylim[0]
+        voxels.grid = &grid[0, 0, 0]
+        voxels.dims = &dims[0]
+        voxels.xlim = &xlim[0]
+        voxels.ylim = &ylim[0]
+        voxels.zlim = &zlim[0]
 
         particles.positions = &positions[0, 0]
         particles.radii = &radii[0] if radii is not None else NULL
@@ -135,12 +142,12 @@ cpdef np.ndarray[double, ndim=2] static2d(
             raise ValueError((
                 f"The input `mode` must be between 0 and 3! Received `{mode}`.\n"
                 "Help:\n"
-                "    kc.RATIO = 0          (= kc2d_ratio)\n"
-                "    kc.INTERSECTION = 1   (= kc2d_intersection)\n"
-                "    kc.PARTICLE = 2       (= kc2d_particle)\n"
-                "    kc.ONE = 3            (= kc2d_one)\n"
+                "    kc.RATIO = 0          (= kc3d_ratio)\n"
+                "    kc.INTERSECTION = 1   (= kc3d_intersection)\n"
+                "    kc.PARTICLE = 2       (= kc3d_particle)\n"
+                "    kc.ONE = 3            (= kc3d_one)\n"
             ))
 
-        kc2d_static(&pixels, &particles, <kc2d_mode>mode)
+        kc3d_static(&voxels, &particles, <kc3d_mode>mode)
 
     return grid

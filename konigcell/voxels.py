@@ -20,9 +20,9 @@ class Voxels(np.ndarray):
     '''A `numpy.ndarray` subclass that manages a 3D voxel space, including
     tools for voxel manipulation and visualisation.
 
-    Besides a 3D arra of voxels, this class also stores the physical space
-    spanned by the pixel grid `xlim` and `ylim` along with some voxel-specific
-    helper methods.
+    Besides a 3D array of voxels, this class also stores the physical space
+    spanned by the voxel grid `xlim`, `ylim` and `zlim` along with some
+    voxel-specific helper methods.
 
     This subclasses the `numpy.ndarray` class, so any `Voxels` object acts
     exactly like a 3D numpy array. All numpy methods and operations are valid
@@ -63,43 +63,6 @@ class Voxels(np.ndarray):
 
     voxel_upper: numpy.ndarray
         The upper right corner of the voxel box.
-
-    Methods
-    -------
-    save(filepath)
-        Save a `Voxels` instance as a binary `pickle` object.
-
-    load(filepath)
-        Load a saved / pickled `Voxels` object from `filepath`.
-
-    cube_trace(index, color = None, opacity = 0.4, colorbar = True,\
-               colorscale = "magma")
-        Get the Plotly `Mesh3d` trace for a single voxel at `index`.
-
-    cubes_traces(condition = lambda voxels: voxels > 0, color = None,\
-                 opacity = 0.4, colorbar = True, colorscale = "magma")
-        Get a list of Plotly `Mesh3d` traces for all voxels selected by the
-        `condition` filtering function.
-
-    voxels_trace(condition = lambda voxel_data: voxel_data > 0, size = 4,\
-                 color = None, opacity = 0.4, colorbar = True,\
-                 colorscale = "Magma", colorbar_title = None)
-        Create and return a trace for all the voxels in this class, with
-        possible filtering.
-
-    heatmap_trace(ix = None, iy = None, iz = None, width = 0,\
-                  colorscale = "Magma", transpose = True)
-        Create and return a Plotly `Heatmap` trace of a 2D slice through the
-        voxels.
-
-    Notes
-    -----
-    The traversed lines do not need to be fully bounded by the voxel space.
-    Their intersection is automatically computed.
-
-    The class saves `voxels` as a **contiguous** numpy array for efficient
-    access in C / Cython functions. The inner data can be mutated, but do not
-    change the shape of the array after instantiating the class.
 
     Examples
     --------
@@ -327,7 +290,7 @@ class Voxels(np.ndarray):
                 (self._zlim[1] - self._zlim[0]) / self.shape[2],
             ])
 
-        return self._pixel_size
+        return self._voxel_size
 
 
     @property
@@ -436,6 +399,28 @@ class Voxels(np.ndarray):
         return obj
 
 
+    @staticmethod
+    def zeros(shape, xlim, ylim, zlim):
+        shape = tuple(shape)
+        if len(shape) != 3:
+            raise ValueError("The input `shape` must have three dimensions.")
+
+        xlim = np.asarray(xlim, dtype = float)
+        if xlim.ndim != 1 or xlim.shape[0] != 2:
+            raise ValueError("`xlim` must have two floating-point values.")
+
+        ylim = np.asarray(ylim, dtype = float)
+        if ylim.ndim != 1 or ylim.shape[0] != 2:
+            raise ValueError("`ylim` must have two floating-point values.")
+
+        zlim = np.asarray(zlim, dtype = float)
+        if zlim.ndim != 1 or zlim.shape[0] != 2:
+            raise ValueError("`zlim` must have two floating-point values.")
+
+
+        return Voxels(np.zeros(shape, dtype = float), xlim, ylim, zlim)
+
+
     def plot(
         self,
         condition = lambda voxel_data: voxel_data > 0,
@@ -503,8 +488,8 @@ class Voxels(np.ndarray):
             fig = plt.gcf()
 
         filtered_indices = np.argwhere(condition(self))
-        positions = self._voxel_size * (0.5 + filtered_indices) + \
-            [self._xlim[0], self._ylim[0], self._zlim[0]]
+        positions = self.voxel_size * (0.5 + filtered_indices) + \
+            [self.xlim[0], self.ylim[0], self.zlim[0]]
 
         x = positions[:, 0]
         y = positions[:, 1]
@@ -592,12 +577,12 @@ class Voxels(np.ndarray):
                 f"Received {index}."
             )))
 
-        xyz = self._voxel_size * index + \
-            [self._xlim[0], self._ylim[0], self._zlim[0]]
+        xyz = self.voxel_size * index + \
+            [self.xlim[0], self.ylim[0], self.zlim[0]]
 
-        x = np.array([0, 0, 1, 1, 0, 0, 1, 1]) * self._voxel_size[0]
-        y = np.array([0, 1, 1, 0, 0, 1, 1, 0]) * self._voxel_size[1]
-        z = np.array([0, 0, 0, 0, 1, 1, 1, 1]) * self._voxel_size[2]
+        x = np.array([0, 0, 1, 1, 0, 0, 1, 1]) * self.voxel_size[0]
+        y = np.array([0, 1, 1, 0, 0, 1, 1, 0]) * self.voxel_size[1]
+        z = np.array([0, 0, 0, 0, 1, 1, 1, 1]) * self.voxel_size[2]
         i = np.array([7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2])
         j = np.array([3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3])
         k = np.array([0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6])
@@ -774,8 +759,8 @@ class Voxels(np.ndarray):
         '''
 
         filtered_indices = np.argwhere(condition(self))
-        positions = self._voxel_size * (0.5 + filtered_indices) + \
-            [self._xlim[0], self._ylim[0], self._zlim[0]]
+        positions = self.voxel_size * (0.5 + filtered_indices) + \
+            [self.xlim[0], self.ylim[0], self.zlim[0]]
 
         marker = dict(
             size = size,
@@ -867,8 +852,8 @@ class Voxels(np.ndarray):
         '''
 
         if ix is not None:
-            x = self._voxel_grids[1]
-            y = self._voxel_grids[2]
+            x = self.voxel_grids[1]
+            y = self.voxel_grids[2]
             z = self[ix, :, :]
 
             for i in range(1, width + 1):
@@ -876,8 +861,8 @@ class Voxels(np.ndarray):
                 z = z + self[ix - i, :, :]
 
         elif iy is not None:
-            x = self._voxel_grids[0]
-            y = self._voxel_grids[2]
+            x = self.voxel_grids[0]
+            y = self.voxel_grids[2]
             z = self[:, iy, :]
 
             for i in range(1, width + 1):
@@ -885,8 +870,8 @@ class Voxels(np.ndarray):
                 z = z + self[:, iy - i, :]
 
         elif iz is not None:
-            x = self._voxel_grids[0]
-            y = self._voxel_grids[1]
+            x = self.voxel_grids[0]
+            y = self.voxel_grids[1]
             z = self[:, :, iz]
 
             for i in range(1, width + 1):
@@ -938,6 +923,3 @@ class Voxels(np.ndarray):
         )
 
         return docstr
-
-
-

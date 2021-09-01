@@ -59,22 +59,6 @@ class Pixels(np.ndarray):
     pixel_upper: numpy.ndarray
         The upper right corner of the pixel rectangle.
 
-    Methods
-    -------
-    save(filepath)
-        Save a `Pixels` instance as a binary `pickle` object.
-
-    load(filepath)
-        Load a saved / pickled `Pixels` object from `filepath`.
-
-    heatmap_trace(ix = None, iy = None, iz = None, width = 0,\
-                  colorscale = "Magma", transpose = True)
-        Create and return a Plotly `Heatmap` trace of a 2D slice through the
-        voxels.
-
-    plot(ax = None)
-        Plot pixels as a heatmap using Matplotlib.
-
     Notes
     -----
     The class saves `pixels` as a **contiguous** numpy array for efficient
@@ -224,8 +208,8 @@ class Pixels(np.ndarray):
         # Compute once upon the first access and cache
         if not hasattr(self, "_pixel_size"):
             self._pixel_size = np.array([
-                (self._xlim[1] - self._xlim[0]) / self.shape[0],
-                (self._ylim[1] - self._ylim[0]) / self.shape[1],
+                (self.xlim[1] - self.xlim[0]) / self.shape[0],
+                (self.ylim[1] - self.ylim[0]) / self.shape[1],
             ])
 
         return self._pixel_size
@@ -259,6 +243,23 @@ class Pixels(np.ndarray):
             self._pixel_upper = np.array([self.xlim[1], self.ylim[1]])
 
         return self._pixel_upper
+
+
+    @staticmethod
+    def zeros(shape, xlim, ylim):
+        shape = tuple(shape)
+        if len(shape) != 2:
+            raise ValueError("The input `shape` must have two dimensions.")
+
+        xlim = np.asarray(xlim, dtype = float)
+        if xlim.ndim != 1 or xlim.shape[0] != 2:
+            raise ValueError("`xlim` must have two floating-point values.")
+
+        ylim = np.asarray(ylim, dtype = float)
+        if ylim.ndim != 1 or ylim.shape[0] != 2:
+            raise ValueError("`ylim` must have two floating-point values.")
+
+        return Pixels(np.zeros(shape, dtype = float), xlim, ylim)
 
 
     def save(self, filepath):
