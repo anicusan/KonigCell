@@ -240,9 +240,9 @@ def static2d(
         if len(positions) / max_workers < 2:
             max_workers = len(positions) // 2
 
-        pos_chunks = utils.split(positions, max_workers, overlap = 1)
-        rad_chunks = utils.split(radii, max_workers, overlap = 1)
-        val_chunks = utils.split(values, max_workers, overlap = 1)
+        pos_chunks = utils.split(positions, max_workers)
+        rad_chunks = utils.split(radii, max_workers)
+        val_chunks = utils.split(values, max_workers)
         pix_chunks = [np.zeros(pixels.shape) for _ in range(max_workers)]
 
         # If `executor` is a class (rather than an instance / object),
