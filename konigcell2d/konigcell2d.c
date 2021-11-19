@@ -458,9 +458,14 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
         r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
 
+        if (isnan(r1) || isnan(r2) || isnan(factor))
+            continue;
+
         // If this is the last segment from a trajectory (i.e. next point is NaN), pixellise full
         // cylinder
-        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y))
+        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y) ||
+            (radii != NULL && isnan(radii[ip + 2])) ||
+            (factors != NULL && isnan(factors[ip + 1])))
             area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
         else
             area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
@@ -476,12 +481,15 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
         r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
 
-        if (omit_last)
-            area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-        else
-            area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+        if (!isnan(r1) && !isnan(r2) && !isnan(factor))
+        {
+            if (omit_last)
+                area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+            else
+                area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
 
-        kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
+            kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
+        }
     }
 
     KC2D_FREE(lgrid);
@@ -824,6 +832,9 @@ void            kc2d_static(kc2d_pixels             *pixels,
         pos = positions[ip];
         r = (radii == NULL ? 0. : radii[ip]);
         f = (factors == NULL ? 1. : factors[ip]);
+
+        if (isnan(pos.x) || isnan(pos.y) || isnan(r) || isnan(f))
+            continue;
 
         // If a particle's radius is zero, treat it as a point
         if (r == 0.)

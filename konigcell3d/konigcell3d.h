@@ -84,7 +84,7 @@ extern "C" {
  * KC3D_MAX_VERTS : maximum number of vertices used in the R3D internal polygon representation.
  * KC3D_SINGLE_PRECISION : if defined, single-precision floats will be used for calculations.
  */
-#define KC3D_MAX_VERTS 1200
+#define KC3D_MAX_VERTS 1300
 // #define KC3D_SINGLE_PRECISION
 
 
@@ -240,7 +240,8 @@ typedef struct {
  * factors : (num_particles,) array or NULL
  *     Factors to multiply each trajectory with, formatted as [f0, f1, ...]; e.g. the trajectory
  *     from [x0, y0, z0] to [x1, y1, z1] is multiplied by f0, from [x1, y1, z1] to [x2, y2, z2] is
- *     multiplied by f1; has length `num_particles`. If NULL, all factors are taken as 1.
+ *     multiplied by f1; has length `num_particles - 1` for `kc3d_dynamic` and `num_particles` for
+ *     `kc3d_static`. If NULL, all factors are taken as 1.
  *
  * num_particles
  *     The number of particles stored in the struct; see each member's definition above.

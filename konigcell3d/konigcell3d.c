@@ -570,9 +570,15 @@ void            kc3d_dynamic(kc3d_voxels            *voxels,
         r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
 
+        if (isnan(r1) || isnan(r2) || isnan(factor))
+            continue;
+
         // If this is the last segment from a trajectory (i.e. next point is NaN), voxellise full
         // cylinder
-        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y) || isnan(trajectory[ip + 2].z))
+        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y) ||
+                isnan(trajectory[ip + 2].z) ||
+                (radii != NULL && isnan(radii[ip + 2])) ||
+                (factors != NULL && isnan(factors[ip + 1])))
             volume = kc3d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
         else
             volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
@@ -589,12 +595,15 @@ void            kc3d_dynamic(kc3d_voxels            *voxels,
         r2 = (radii == NULL ? rsmall : radii[ip + 1]);
         factor = (factors == NULL ? 1 : factors[ip]);
 
-        if (omit_last)
-            volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-        else
-            volume = kc3d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+        if (!isnan(r1) && !isnan(r2) && !isnan(factor))
+        {
+            if (omit_last)
+                volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+            else
+                volume = kc3d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
 
-        kc3d_rasterize_ll(&cylinder, volume, grid, lgrid, dims, grid_size, factor, mode);
+            kc3d_rasterize_ll(&cylinder, volume, grid, lgrid, dims, grid_size, factor, mode);
+        }
     }
 
     KC3D_FREE(lgrid);
@@ -669,6 +678,9 @@ void            kc3d_static(kc3d_voxels             *voxels,
 
         radius = (radii == NULL ? rsmall : radii[ip]);
         factor = (factors == NULL ? 1 : factors[ip]);
+
+        if (isnan(radius) || isnan(factor))
+            continue;
 
         volume = kc3d_sphere(&sphere, trajectory[ip], radius);
         kc3d_rasterize_ll(&sphere, volume, grid, lgrid, dims, grid_size, factor, mode);

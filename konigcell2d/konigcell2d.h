@@ -230,7 +230,8 @@ typedef struct {
  * factors : (num_particles,) array or NULL
  *     Factors to multiply each trajectory, formatted as [f0, f1, ...]; e.g. the trajectory from
  *     [x0, y0] to [x1, y1] is multiplied by f0, from [x1, y1] to [x2, y2] is multiplied by f1;
- *     has length `num_particles`. If NULL, all factors are taken as 1.
+ *     has length `num_particles - 1` for `kc2d_dynamic` and `num_particles` for `kc2d_static`. If
+ *     NULL, all factors are taken as 1.
  *
  * num_particles
  *     The number of particles stored in the struct; see each member's definition above.
