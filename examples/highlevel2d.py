@@ -24,6 +24,7 @@ radii = rng.uniform(0.1, 2, num_particles)
 # Pixellise the 2D particle's moving / dynamic trajectory
 pixels = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
                       resolution = (200, 200))
+print(pixels)
 
 # Plot pixels
 fig = go.Figure()
@@ -36,6 +37,7 @@ fig.show()
 # Pixellise the 2D particles' individual / static locations
 pixels2 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
                       resolution = (200, 200))
+print(pixels2)
 
 # Plot pixels
 fig2 = go.Figure()

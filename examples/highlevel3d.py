@@ -24,6 +24,7 @@ radii = rng.uniform(0.1, 2, num_particles)
 # Voxellise the 3D particle's moving / dynamic trajectory
 voxels = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
                       resolution = (50, 50, 50))
+print(voxels)
 
 # Plot voxels; only use `voxels.cubes_traces()` if you have very few voxels
 fig = go.Figure()
@@ -42,6 +43,7 @@ fig.show()
 # Voxellise the 3D particles' individual / static locations
 voxels2 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
                       resolution = (50, 50, 50))
+print(voxels2)
 
 # Plot voxels; only use `voxels.cubes_traces()` if you have very few voxels
 fig2 = go.Figure()
