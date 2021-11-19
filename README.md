@@ -14,6 +14,7 @@ Better? No? Here are some figures produced by KonigCell:
 
 ![Example Plots](/docs/source/_static/examples.png?raw=true "Example plots produced by KonigCell.")
 
+*Left panel: 2D residence time distribution in a GranuTools GranuDrum imaged using Positron Emission Particle Tracking (PEPT). Two middle panels: 3D velocity distribution in the same system; voxels are rendered as a scatter plot (left) and tomogram-like 3-slice (right). Right panel: velocity vectorfield in a constricted pipe simulating a aneurysm, imaged using PEPT.*
 
 
 This is, to my knowledge, the only library that accurately projects particle
@@ -113,7 +114,7 @@ And thanks to Dr. Kit Windows-Yule for putting up with my bonkers ideas.
 ## Citing
 If you use this library in your research, you are kindly asked to cite:
 
-> <Paper after publication>
+> [Paper after publication]
 
 
 This library would not have been possible without the excellent `r3d` library
