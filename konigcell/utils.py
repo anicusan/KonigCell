@@ -11,12 +11,15 @@ import numpy as np
 
 
 def get_cutoffs(rmax, *args):
+    '''Return physical limits encompassing each `arg` with extra `rmax` units.
+    Each `arg` is horizontally stacked / concatenated.
+    '''
     cutoffs = []
     for arg in args:
         arg = np.hstack(arg)
         cutoffs.append([
-            arg.min() - rmax,
-            arg.max() + rmax,
+            np.nanmin(arg) - rmax,
+            np.nanmax(arg) + rmax,
         ])
 
     if len(cutoffs) == 1:
@@ -49,7 +52,6 @@ def check_ncols(ncols, **kwargs):
     '''Raise ValueError if any element in the input keyword arguments does not
     have the number of columns `ncols`.
     '''
-    # Extract first dict element's length
     for k, v in kwargs.items():
         if v.ndim != 2 or v.shape[1] != ncols:
             raise ValueError(textwrap.fill((
@@ -59,6 +61,9 @@ def check_ncols(ncols, **kwargs):
 
 
 def split(x, n, overlap = 0):
+    '''Split `x` into `n` (approx.) equal chunks with `overlap` overlapping
+    elements between consecutive chunks.
+    '''
     if x is None:
         return [None] * n
 

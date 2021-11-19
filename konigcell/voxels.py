@@ -29,113 +29,67 @@ except ImportError:
     pass
 
 
-class Voxels(np.ndarray):
-    '''A `numpy.ndarray` subclass that manages a 3D voxel space, including
+class Voxels:
+    '''A class managing a 3D voxel space with physical dimensions, including
     tools for voxel manipulation and visualisation.
 
-    Besides a 3D array of voxels, this class also stores the physical space
-    spanned by the voxel grid `xlim`, `ylim` and `zlim` along with some
-    voxel-specific helper methods.
-
-    This subclasses the `numpy.ndarray` class, so any `Voxels` object acts
-    exactly like a 3D numpy array. All numpy methods and operations are valid
-    on `Voxels` (e.g. add 1 to all voxels with `voxels += 1`).
+    The `.voxels` attribute is simply a `numpy.ndarray[ndim=3, dtype=float64]`.
+    The `.attrs` dictionary can be used to store extra information.
 
     Attributes
     ----------
-    voxels: (M, N, P) numpy.ndarray
-        The 3D numpy array containing the number of lines that pass through
-        each voxel. They are stored as `float`s. This class assumes a uniform
-        grid of voxels - that is, the voxel size in each dimension is constant,
-        but can vary from one dimension to another. The number of voxels in
-        each dimension is defined by `number_of_voxels`.
+    voxels: (M, N, P) np.ndarray[ndim=3, dtype=float64]
+        The 3D numpy array containing the voxel values. This class assumes a
+        uniform grid of voxels - that is, the voxel size in each dimension is
+        constant, but can vary from one dimension to another.
 
-    xlim: (2,) numpy.ndarray
+    xlim: (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         x-dimension, formatted as [x_min, x_max].
 
-    ylim: (2,) numpy.ndarray
+    ylim: (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         y-dimension, formatted as [y_min, y_max].
 
-    zlim: (2,) numpy.ndarray
+    zlim: (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         z-dimension, formatted as [z_min, z_max].
 
-    voxel_size: (3,) numpy.ndarray
+    voxel_size: (3,) np.ndarray[ndim=1, dtype=float64]
         The lengths of a voxel in the x-, y- and z-dimensions, respectively.
 
-    voxel_grids: list[numpy.ndarray]
+    voxel_grids: (3,) list[np.ndarray[ndim=1, dtype=float64]]
         A list containing the voxel gridlines in the x-, y-, and z-dimensions.
         Each dimension's gridlines are stored as a numpy of the voxel
         delimitations, such that it has length (M + 1), where M is the number
         of voxels in given dimension.
 
-    voxel_lower: numpy.ndarray
-        The lower left corner of the voxel box.
+    lower: (3,) np.ndarray[ndim=1, dtype=float64]
+        The lower left corner of the voxel box; corresponds to
+        [xlim[0], ylim[0], zlim[0]].
 
-    voxel_upper: numpy.ndarray
-        The upper right corner of the voxel box.
+    upper: (3,) np.ndarray[ndim=1, dtype=float64]
+        The upper right corner of the voxel box; corresponds to
+        [xlim[1], ylim[1], zlim[1]].
+
+    attrs: dict[Any, Any]
+        A dictionary storing any other user-defined information.
 
     Examples
     --------
-    This class is most often instantiated from a sample of lines to voxellise:
-
-    >>> import pept
-    >>> import numpy as np
-
-    >>> lines = np.arange(70).reshape(10, 7)
-
-    >>> number_of_voxels = [3, 4, 5]
-    >>> voxels = pept.Voxels.from_lines(lines, number_of_voxels)
-    >>> Initialised Voxels class in 0.0006861686706542969 s.
-
-    >>> print(voxels)
-    >>> voxels:
-    >>> [[[2. 1. 0. 0. 0.]
-    >>>   [0. 2. 0. 0. 0.]
-    >>>   [0. 0. 0. 0. 0.]
-    >>>   [0. 0. 0. 0. 0.]]
-
-    >>>  [[0. 0. 0. 0. 0.]
-    >>>   [0. 1. 1. 0. 0.]
-    >>>   [0. 0. 1. 1. 0.]
-    >>>   [0. 0. 0. 0. 0.]]
-
-    >>>  [[0. 0. 0. 0. 0.]
-    >>>   [0. 0. 0. 0. 0.]
-    >>>   [0. 0. 0. 2. 0.]
-    >>>   [0. 0. 0. 1. 2.]]]
-
-    >>> number_of_voxels =    (3, 4, 5)
-    >>> voxel_size =          [22.  16.5 13.2]
-
-    >>> xlim =                [ 1. 67.]
-    >>> ylim =                [ 2. 68.]
-    >>> zlim =                [ 3. 69.]
-
-    >>> voxel_grids:
-    >>> [array([ 1., 23., 45., 67.]),
-    >>>  array([ 2. , 18.5, 35. , 51.5, 68. ]),
-    >>>  array([ 3. , 16.2, 29.4, 42.6, 55.8, 69. ])]
-
-    Note that it is important to define the `number_of_voxels`.
+    TODO
 
     See Also
     --------
-    pept.VoxelData : Asynchronously manage multiple voxel spaces.
-    pept.LineData : Encapsulate lines for ease of iteration and plotting.
-    pept.PointData : Encapsulate points for ease of iteration and plotting.
-    PlotlyGrapher : Easy, publication-ready plotting of PEPT-oriented data.
+    konigcell.Pixels : a class managing a physical 2D pixel space.
+    konigcell.dynamic3d : rasterize moving particles' trajectories.
+    konigcell.static3d : rasterize static particles' positions.
+    konigcell.dynamic_prob3d : 3D probability distribution of a quantity.
     '''
+    __slots__ = ("_voxels", "_xlim", "_ylim", "_zlim", "_attrs", "_voxel_size",
+                 "_voxel_grid", "_lower", "_upper")
 
-    def __new__(
-        cls,
-        voxels_array,
-        xlim,
-        ylim,
-        zlim,
-    ):
+    def __init__(self, voxels_array, xlim, ylim, zlim, **kwargs):
         '''`Voxels` class constructor.
 
         Parameters
@@ -154,6 +108,9 @@ class Voxels(np.ndarray):
         zlim: (2,) numpy.ndarray
             The lower and upper boundaries of the voxellised volume in the
             z-dimension, formatted as [z_min, z_max].
+
+        kwargs: extra keyword arguments
+            Extra user-defined attributes to be saved in `.attrs`.
 
         Raises
         ------
@@ -208,74 +165,16 @@ class Voxels(np.ndarray):
             )))
 
         # Setting class attributes
-        voxels = voxels_array.view(cls)
-
-        voxels._xlim = xlim
-        voxels._ylim = ylim
-        voxels._zlim = zlim
-
-        '''
-        voxels._voxel_size = np.array([
-            (voxels._xlim[1] - voxels._xlim[0]) / voxels._number_of_voxels[0],
-            (voxels._ylim[1] - voxels._ylim[0]) / voxels._number_of_voxels[1],
-            (voxels._zlim[1] - voxels._zlim[0]) / voxels._number_of_voxels[2],
-        ])
-
-        voxels._voxel_grids = tuple([
-            np.linspace(lim[0], lim[1], voxels._number_of_voxels[i] + 1)
-            for i, lim in enumerate((voxels._xlim, voxels._ylim, voxels._zlim))
-        ])
-        '''
-
-        return voxels
-
-
-    def __array_finalize__(self, voxels):
-        if voxels is None:
-            return
-
-        self._xlim = getattr(voxels, "_xlim", None)
-        self._ylim = getattr(voxels, "_ylim", None)
-        self._zlim = getattr(voxels, "_zlim", None)
-
-
-    def __reduce__(self):
-        # __reduce__ and __setstate__ ensure correct pickling behaviour. See
-        # https://stackoverflow.com/questions/26598109/preserve-custom-
-        # attributes-when-pickling-subclass-of-numpy-array
-
-        # Get the parent's __reduce__ tuple
-        pickled_state = super(Voxels, self).__reduce__()
-
-        # Create our own tuple to pass to __setstate__
-        new_state = pickled_state[2] + (
-            self._xlim,
-            self._ylim,
-            self._zlim,
-        )
-
-        # Return a tuple that replaces the parent's __setstate__ tuple with
-        # our own
-        return (pickled_state[0], pickled_state[1], new_state)
-
-
-    def __setstate__(self, state):
-        # __reduce__ and __setstate__ ensure correct pickling behaviour
-        # https://stackoverflow.com/questions/26598109/preserve-custom-
-        # attributes-when-pickling-subclass-of-numpy-array
-
-        # Set the class attributes
-        self._zlim = state[-1]
-        self._ylim = state[-2]
-        self._xlim = state[-3]
-
-        # Call the parent's __setstate__ with the other tuple elements.
-        super(Voxels, self).__setstate__(state[0:-3])
+        self._voxels = voxels_array
+        self._xlim = xlim
+        self._ylim = ylim
+        self._zlim = zlim
+        self._attrs = kwargs
 
 
     @property
     def voxels(self):
-        return self.__array__()
+        return self._voxels
 
 
     @property
@@ -298,50 +197,55 @@ class Voxels(np.ndarray):
         # Compute once upon the first access and cache
         if not hasattr(self, "_voxel_size"):
             self._voxel_size = np.array([
-                (self._xlim[1] - self._xlim[0]) / self.shape[0],
-                (self._ylim[1] - self._ylim[0]) / self.shape[1],
-                (self._zlim[1] - self._zlim[0]) / self.shape[2],
+                (self._xlim[1] - self._xlim[0]) / self._voxels.shape[0],
+                (self._ylim[1] - self._ylim[0]) / self._voxels.shape[1],
+                (self._zlim[1] - self._zlim[0]) / self._voxels.shape[2],
             ])
 
         return self._voxel_size
 
 
     @property
-    def voxel_grid(self):
+    def voxel_grids(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_voxel_grid"):
-            self._voxel_grid = [
-                np.linspace(lim[0], lim[1], self.shape[i] + 1)
-                for i, lim in enumerate((self.xlim, self.ylim, self.zlim))
+        if not hasattr(self, "_voxel_grids"):
+            self._voxel_grids = [
+                np.linspace(lim[0], lim[1], self._voxels.shape[i] + 1)
+                for i, lim in enumerate((self._xlim, self._ylim, self._zlim))
             ]
 
-        return self._voxel_grid
+        return self._voxel_grids
 
 
     @property
-    def voxel_lower(self):
+    def lower(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_voxel_lower"):
-            self._voxel_lower = np.array([
-                self.xlim[0],
-                self.ylim[0],
-                self.zlim[0],
+        if not hasattr(self, "_lower"):
+            self._lower = np.array([
+                self._xlim[0],
+                self._ylim[0],
+                self._zlim[0],
             ])
 
-        return self._voxel_lower
+        return self._lower
 
 
     @property
-    def voxel_upper(self):
+    def upper(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_voxel_upper"):
-            self._voxel_upper = np.array([
-                self.xlim[1],
-                self.ylim[1],
-                self.zlim[1],
+        if not hasattr(self, "_upper"):
+            self._upper = np.array([
+                self._xlim[1],
+                self._ylim[1],
+                self._zlim[1],
             ])
 
-        return self._voxel_upper
+        return self._upper
+
+
+    @property
+    def attrs(self):
+        return self._attrs
 
 
     def save(self, filepath):
@@ -412,26 +316,33 @@ class Voxels(np.ndarray):
         return obj
 
 
+    def copy(self, voxels_array = None, xlim = None, ylim = None, zlim = None,
+             **kwargs):
+        '''Create a copy of the current `Voxels` instance, optionally with new
+        `voxels_array`, `xlim` and / or `ylim`.
+
+        The extra attributes in `.attrs` are propagated too. Pass new
+        attributes as extra keyword arguments.
+        '''
+        if voxels_array is None:
+            voxels_array = self.voxels.copy()
+        if xlim is None:
+            xlim = self.xlim.copy()
+        if ylim is None:
+            ylim = self.ylim.copy()
+        if zlim is None:
+            zlim = self.zlim.copy()
+
+        # Propagate attributes
+        kwargs.update(self.attrs)
+
+        return Voxels(voxels_array, xlim, ylim, zlim, **kwargs)
+
+
     @staticmethod
-    def zeros(shape, xlim, ylim, zlim):
-        shape = tuple(shape)
-        if len(shape) != 3:
-            raise ValueError("The input `shape` must have three dimensions.")
-
-        xlim = np.asarray(xlim, dtype = float)
-        if xlim.ndim != 1 or xlim.shape[0] != 2:
-            raise ValueError("`xlim` must have two floating-point values.")
-
-        ylim = np.asarray(ylim, dtype = float)
-        if ylim.ndim != 1 or ylim.shape[0] != 2:
-            raise ValueError("`ylim` must have two floating-point values.")
-
-        zlim = np.asarray(zlim, dtype = float)
-        if zlim.ndim != 1 or zlim.shape[0] != 2:
-            raise ValueError("`zlim` must have two floating-point values.")
-
-
-        return Voxels(np.zeros(shape, dtype = float), xlim, ylim, zlim)
+    def zeros(shape, xlim, ylim, zlim, **kwargs):
+        zero_voxels = np.zeros(shape, dtype = float)
+        return Voxels(zero_voxels, xlim, ylim, zlim, **kwargs)
 
 
     def plot(
@@ -500,7 +411,7 @@ class Voxels(np.ndarray):
         else:
             fig = plt.gcf()
 
-        filtered_indices = np.argwhere(condition(self))
+        filtered_indices = np.argwhere(condition(self.voxels))
         positions = self.voxel_size * (0.5 + filtered_indices) + \
             [self.xlim[0], self.ylim[0], self.zlim[0]]
 
@@ -508,7 +419,10 @@ class Voxels(np.ndarray):
         y = positions[:, 1]
         z = positions[:, 2]
 
-        voxel_vals = np.array([self[tuple(fi)] for fi in filtered_indices])
+        voxel_vals = np.array([
+            self.voxels[tuple(fi)]
+            for fi in filtered_indices
+        ])
 
         cmap = plt.cm.magma
         color_array = cmap(voxel_vals / voxel_vals.max())
@@ -533,6 +447,43 @@ class Voxels(np.ndarray):
     def plot_volumetric(
         self,
         condition = lambda voxels: voxels > 0,
+        mode = "box",
+        colorscale = "magma",
+    ):
+        # Type-checking inputs
+        mode = str(mode).lower()
+
+        vox = self.voxels.copy(order = "F")
+        vox[~(condition(vox))] = 0.
+
+        # You need to install PyVista to use this function!
+        grid = pv.UniformGrid()
+        grid.dimensions = np.array(vox.shape) + 1
+        grid.origin = self.lower
+        grid.spacing = self.voxel_size
+        grid.cell_arrays["values"] = vox.flatten(order="F")
+
+        # Create PyVista volumetric / voxel plot with an interactive clipper
+        fig = pv.Plotter()
+
+        if mode == "plane":
+            fig.add_mesh_clip_plane(grid, cmap = colorscale)
+        elif mode == "box":
+            fig.add_mesh_clip_box(grid, cmap = colorscale)
+        elif mode == "slice":
+            fig.add_mesh(grid.slice_orthogonal(), cmap = colorscale)
+        else:
+            raise ValueError(textwrap.fill((
+                "The input `mode` must be one of 'plane' | 'box' | 'slice'. "
+                f"Received `mode={mode}`."
+            )))
+
+        return fig
+
+
+    def vtk(
+        self,
+        condition = lambda voxels: voxels != 0.,
     ):
         vox = self.voxels.copy(order = "F")
         vox[~(condition(vox))] = 0.
@@ -540,15 +491,11 @@ class Voxels(np.ndarray):
         # You need to install PyVista to use this function!
         grid = pv.UniformGrid()
         grid.dimensions = np.array(vox.shape) + 1
-        grid.origin = self.voxel_lower
+        grid.origin = self.lower
         grid.spacing = self.voxel_size
         grid.cell_arrays["values"] = vox.flatten(order="F")
 
-        # Create PyVista volumetric / voxel plot with an interactive clipper
-        fig = pv.Plotter()
-        fig.add_mesh_clip_plane(grid)
-
-        return fig
+        return grid
 
 
     def cube_trace(
@@ -634,10 +581,8 @@ class Voxels(np.ndarray):
 
         if colorbar and color is None:
             cmap = matplotlib.cm.get_cmap(colorscale)
-            c = cmap(self[tuple(index)] / (self.max() or 1))
-            cube.update(
-                color = "rgb({},{},{})".format(c[0], c[1], c[2])
-            )
+            c = cmap(self.voxels[tuple(index)] / (self.voxels.max() or 1))
+            cube.update(color = f"rgb({c[0]},{c[1]},{c[2]})")
 
         # You need to install Plotly to use this function!
         return go.Mesh3d(cube)
@@ -706,7 +651,7 @@ class Voxels(np.ndarray):
 
         '''
 
-        indices = np.argwhere(condition(self))
+        indices = np.argwhere(condition(self.voxels))
         traces = [
             self.cube_trace(
                 i,
@@ -793,7 +738,7 @@ class Voxels(np.ndarray):
 
         '''
 
-        filtered_indices = np.argwhere(condition(self))
+        filtered_indices = np.argwhere(condition(self.voxels))
         positions = self.voxel_size * (0.5 + filtered_indices) + \
             [self.xlim[0], self.ylim[0], self.zlim[0]]
 
@@ -804,7 +749,7 @@ class Voxels(np.ndarray):
         )
 
         if colorbar and color is None:
-            voxel_vals = [self[tuple(fi)] for fi in filtered_indices]
+            voxel_vals = [self.voxels[tuple(fi)] for fi in filtered_indices]
             marker.update(colorscale = "Magma", color = voxel_vals)
 
             if colorbar_title is not None:
@@ -890,29 +835,29 @@ class Voxels(np.ndarray):
         if ix is not None:
             x = self.voxel_grids[1]
             y = self.voxel_grids[2]
-            z = self[ix, :, :]
+            z = self.voxels[ix, :, :]
 
             for i in range(1, width + 1):
-                z = z + self[ix + i, :, :]
-                z = z + self[ix - i, :, :]
+                z = z + self.voxels[ix + i, :, :]
+                z = z + self.voxels[ix - i, :, :]
 
         elif iy is not None:
             x = self.voxel_grids[0]
             y = self.voxel_grids[2]
-            z = self[:, iy, :]
+            z = self.voxels[:, iy, :]
 
             for i in range(1, width + 1):
-                z = z + self[:, iy + i, :]
-                z = z + self[:, iy - i, :]
+                z = z + self.voxels[:, iy + i, :]
+                z = z + self.voxels[:, iy - i, :]
 
         elif iz is not None:
             x = self.voxel_grids[0]
             y = self.voxel_grids[1]
-            z = self[:, :, iz]
+            z = self.voxels[:, :, iz]
 
             for i in range(1, width + 1):
-                z = z + self[:, :, iz + i]
-                z = z + self[:, :, iz - i]
+                z = z + self.voxels[:, :, iz + i]
+                z = z + self.voxels[:, :, iz - i]
 
         else:
             raise ValueError(textwrap.fill((
@@ -932,31 +877,36 @@ class Voxels(np.ndarray):
         return go.Heatmap(heatmap)
 
 
-    def __str__(self):
-        # Shown when calling print(class)
-        docstr = (
-            f"{self.__array__()}\n\n"
-            f"shape =               {self.shape}\n"
-            f"voxel_size =          {self.voxel_size}\n\n"
-            f"xlim =                {self.xlim}\n"
-            f"ylim =                {self.ylim}\n"
-            f"zlim =                {self.zlim}\n\n"
-            f"voxel_grids:\n"
-            f"([{self.voxel_grid[0][0]} ... {self.voxel_grid[0][-1]}],\n"
-            f" [{self.voxel_grid[1][0]} ... {self.voxel_grid[1][-1]}],\n"
-            f" [{self.voxel_grid[2][0]} ... {self.voxel_grid[2][-1]}])"
-        )
-
-        return docstr
-
-
     def __repr__(self):
-        # Shown when writing the class on a REPR
-        docstr = (
-            "Class instance that inherits from `konigcell.Voxels`.\n"
-            f"Type:\n{type(self)}\n\n"
-            "Attributes\n----------\n"
-            f"{self.__str__()}"
-        )
+        # String representation of the class
+        name = "Voxels"
+        underline = "-" * len(name)
 
-        return docstr
+        # Custom printing of the .lines and .samples_indices arrays
+        with np.printoptions(threshold = 5, edgeitems = 2):
+            voxels_str = f"{textwrap.indent(str(self.voxels), '  ')}"
+
+        # Pretty-printing extra attributes
+        attrs_str = ""
+        if self.attrs:
+            items = []
+            for k, v in self.attrs.items():
+                s = f"  {k.__repr__()}: {v}"
+                if len(s) > 75:
+                    s = s[:72] + "..."
+                items.append(s)
+            attrs_str = "\n" + "\n".join(items) + "\n"
+
+        # Return constructed string
+        return (
+            f"{name}\n{underline}\n"
+            f"xlim = {self.xlim}\n"
+            f"ylim = {self.ylim}\n"
+            f"zlim = {self.ylim}\n"
+            f"voxels = \n"
+            f"  (shape: {self.voxels.shape})\n"
+            f"{voxels_str}\n"
+            "attrs = {"
+            f"{attrs_str}"
+            "}\n"
+        )

@@ -13,10 +13,10 @@ from    .               import  kc2d
 from    .               import  kc3d
 
 from    .compute2d      import  dynamic2d, static2d
-from    .compute2d      import  probability2d
+from    .compute2d      import  dynamic_prob2d, static_prob2d
 
 from    .compute3d      import  dynamic3d, static3d
-from    .compute3d      import  probability3d
+from    .compute3d      import  dynamic_prob3d, static_prob3d
 
 
 # Import package version

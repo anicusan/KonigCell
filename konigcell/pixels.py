@@ -23,49 +23,51 @@ except ImportError:
     pass
 
 
-class Pixels(np.ndarray):
-    '''A `numpy.ndarray` subclass that manages a 2D pixel space, including
+class Pixels:
+    '''A class managing a 2D pixel space with physical dimensions, including
     tools for pixel manipulation and visualisation.
 
-    Besides a 2D array of pixels, this class also stores the physical space
-    spanned by the pixel grid `xlim` and `ylim` along with some pixel-specific
-    helper methods.
+    The `.pixels` attribute is simply a `numpy.ndarray[ndim=2, dtype=float64]`.
+    If you think of `Pixels` as an image, the origin is the top left corner,
+    the X-dimension is the left edge and the Y-dimension is the top edge, so
+    that it can be indexed as `.pixels[ix, iy]`.
 
-    This subclasses the `numpy.ndarray` class, so any `Pixels` object acts
-    exactly like a 2D numpy array. All numpy methods and operations are valid
-    on `Pixels` (e.g. add 1 to all pixels with `pixels += 1`).
+    The `.attrs` dictionary can be used to store extra information.
 
     Attributes
     ----------
-    pixels: (M, N) numpy.ndarray
-        The 2D numpy array containing the number of lines that pass through
-        each pixel. They are stored as `float`s. This class assumes a uniform
-        grid of pixels - that is, the pixel size in each dimension is constant,
-        but can vary from one dimension to another. The number of pixels in
-        each dimension is defined by `number_of_pixels`.
+    pixels: (M, N) np.ndarray[ndim=2, dtype=float64]
+        The 2D numpy array containing the pixel values. This class assumes a
+        uniform grid of pixels - that is, the pixel size in each dimension is
+        constant, but can vary from one dimension to another.
 
-    xlim: (2,) numpy.ndarray
+    xlim: (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the pixellised volume in the
         x-dimension, formatted as [x_min, x_max].
 
-    ylim: (2,) numpy.ndarray
+    ylim: (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the pixellised volume in the
         y-dimension, formatted as [y_min, y_max].
 
-    pixel_size: (2,) numpy.ndarray
+    pixel_size: (2,) np.ndarray[ndim=1, dtype=float64]
         The lengths of a pixel in the x- and y-dimensions, respectively.
 
-    pixel_grid: list[numpy.ndarray]
+    pixel_grid: list[(M+1,) np.ndarray, (N+1,) np.ndarray]
         A list containing the pixel gridlines in the x- and y-dimensions.
         Each dimension's gridlines are stored as a numpy of the pixel
         delimitations, such that it has length (M + 1), where M is the number
         of pixels in a given dimension.
 
-    pixel_lower: numpy.ndarray
-        The lower left corner of the pixel rectangle.
+    lower: (2,) np.ndarray[ndim=1, dtype=float64]
+        The lower left corner of the pixel rectangle; corresponds to
+        [xlim[0], ylim[0]].
 
-    pixel_upper: numpy.ndarray
-        The upper right corner of the pixel rectangle.
+    upper: (2,) np.ndarray[ndim=1, dtype=float64]
+        The upper right corner of the pixel rectangle; corresponds to
+        [xlim[1], ylim[1]].
+
+    attrs: dict[Any, Any]
+        A dictionary storing any other user-defined information.
 
     Notes
     -----
@@ -79,15 +81,15 @@ class Pixels(np.ndarray):
 
     See Also
     --------
-    TODO
+    konigcell.Voxels : a class managing a physical 3D voxel space.
+    konigcell.dynamic2d : rasterize moving particles' trajectories.
+    konigcell.static2d : rasterize static particles' positions.
+    konigcell.dynamic_prob2d : 2D probability distribution of a quantity.
     '''
+    __slots__ = ("_pixels", "_xlim", "_ylim", "_attrs", "_pixel_size",
+                 "_pixel_grid", "_lower", "_upper")
 
-    def __new__(
-        cls,
-        pixels_array,
-        xlim,
-        ylim,
-    ):
+    def __init__(self, pixels_array, xlim, ylim, **kwargs):
         '''`Pixels` class constructor.
 
         Parameters
@@ -103,11 +105,19 @@ class Pixels(np.ndarray):
             The lower and upper boundaries of the pixellised volume in the
             y-dimension, formatted as [y_min, y_max].
 
+        kwargs: extra keyword arguments
+            Extra user-defined attributes to be saved in `.attrs`.
+
         Raises
         ------
         ValueError
-            If `pixels_array` does not have exactly 3 dimensions or if
+            If `pixels_array` does not have exactly 2 dimensions or if
             `xlim` or `ylim` do not have exactly 2 values each.
+
+        Notes
+        -----
+        No copies are made if `pixels_array`, `xlim` and `ylim` are contiguous
+        NumPy arrays with dtype=float64.
 
         '''
 
@@ -146,59 +156,15 @@ class Pixels(np.ndarray):
             )))
 
         # Setting class attributes
-        pixels = pixels_array.view(cls)
-        pixels._number_of_pixels = pixels.shape
-
-        pixels._xlim = xlim
-        pixels._ylim = ylim
-
-        return pixels
-
-
-    def __array_finalize__(self, pixels):
-        # Required method for numpy subclassing
-        if pixels is None:
-            return
-
-        self._xlim = getattr(pixels, "_xlim", None)
-        self._ylim = getattr(pixels, "_ylim", None)
-
-
-    def __reduce__(self):
-        # __reduce__ and __setstate__ ensure correct pickling behaviour. See
-        # https://stackoverflow.com/questions/26598109/preserve-custom-
-        # attributes-when-pickling-subclass-of-numpy-array
-
-        # Get the parent's __reduce__ tuple
-        pickled_state = super(Pixels, self).__reduce__()
-
-        # Create our own tuple to pass to __setstate__
-        new_state = pickled_state[2] + (
-            self._xlim,
-            self._ylim,
-        )
-
-        # Return a tuple that replaces the parent's __setstate__ tuple with
-        # our own
-        return (pickled_state[0], pickled_state[1], new_state)
-
-
-    def __setstate__(self, state):
-        # __reduce__ and __setstate__ ensure correct pickling behaviour
-        # https://stackoverflow.com/questions/26598109/preserve-custom-
-        # attributes-when-pickling-subclass-of-numpy-array
-
-        # Set the class attributes
-        self._ylim = state[-1]
-        self._xlim = state[-2]
-
-        # Call the parent's __setstate__ with the other tuple elements.
-        super(Pixels, self).__setstate__(state[0:-2])
+        self._pixels = pixels_array
+        self._xlim = xlim
+        self._ylim = ylim
+        self._attrs = kwargs
 
 
     @property
     def pixels(self):
-        return self.__array__()
+        return self._pixels
 
 
     @property
@@ -212,12 +178,17 @@ class Pixels(np.ndarray):
 
 
     @property
+    def attrs(self):
+        return self._attrs
+
+
+    @property
     def pixel_size(self):
         # Compute once upon the first access and cache
         if not hasattr(self, "_pixel_size"):
             self._pixel_size = np.array([
-                (self.xlim[1] - self.xlim[0]) / self.shape[0],
-                (self.ylim[1] - self.ylim[0]) / self.shape[1],
+                (self._xlim[1] - self._xlim[0]) / self._pixels.shape[0],
+                (self._ylim[1] - self._ylim[0]) / self._pixels.shape[1],
             ])
 
         return self._pixel_size
@@ -228,46 +199,34 @@ class Pixels(np.ndarray):
         # Compute once upon the first access and cache
         if not hasattr(self, "_pixel_grid"):
             self._pixel_grid = [
-                np.linspace(lim[0], lim[1], self.shape[i] + 1)
-                for i, lim in enumerate((self.xlim, self.ylim))
+                np.linspace(lim[0], lim[1], self._pixels.shape[i] + 1)
+                for i, lim in enumerate((self._xlim, self._ylim))
             ]
 
         return self._pixel_grid
 
 
     @property
-    def pixel_lower(self):
+    def lower(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_pixel_lower"):
-            self._pixel_lower = np.array([self.xlim[0], self.ylim[0]])
+        if not hasattr(self, "_lower"):
+            self._lower = np.array([self._xlim[0], self._ylim[0]])
 
-        return self._pixel_lower
+        return self._lower
 
 
     @property
-    def pixel_upper(self):
+    def upper(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_pixel_upper"):
-            self._pixel_upper = np.array([self.xlim[1], self.ylim[1]])
+        if not hasattr(self, "_upper"):
+            self._upper = np.array([self._xlim[1], self._ylim[1]])
 
-        return self._pixel_upper
+        return self._upper
 
 
     @staticmethod
-    def zeros(shape, xlim, ylim):
-        shape = tuple(shape)
-        if len(shape) != 2:
-            raise ValueError("The input `shape` must have two dimensions.")
-
-        xlim = np.asarray(xlim, dtype = float)
-        if xlim.ndim != 1 or xlim.shape[0] != 2:
-            raise ValueError("`xlim` must have two floating-point values.")
-
-        ylim = np.asarray(ylim, dtype = float)
-        if ylim.ndim != 1 or ylim.shape[0] != 2:
-            raise ValueError("`ylim` must have two floating-point values.")
-
-        return Pixels(np.zeros(shape, dtype = float), xlim, ylim)
+    def zeros(shape, xlim, ylim, **kwargs):
+        return Pixels(np.zeros(shape, dtype = float), xlim, ylim, **kwargs)
 
 
     def save(self, filepath):
@@ -338,6 +297,26 @@ class Pixels(np.ndarray):
         return obj
 
 
+    def copy(self, pixels_array = None, xlim = None, ylim = None, **kwargs):
+        '''Create a copy of the current `Pixels` instance, optionally with new
+        `pixels_array`, `xlim` and / or `ylim`.
+
+        The extra attributes in `.attrs` are propagated too. Pass new
+        attributes as extra keyword arguments.
+        '''
+        if pixels_array is None:
+            pixels_array = self.pixels.copy()
+        if xlim is None:
+            xlim = self.xlim.copy()
+        if ylim is None:
+            ylim = self.ylim.copy()
+
+        # Propagate attributes
+        kwargs.update(self.attrs)
+
+        return Pixels(pixels_array, xlim, ylim, **kwargs)
+
+
     def heatmap_trace(
         self,
         colorscale = "Magma",
@@ -360,21 +339,15 @@ class Pixels(np.ndarray):
 
         Examples
         --------
-        Pixellise an array of lines and add them to a `PlotlyGrapher2D`
-        instance:
+        Create a Pixels array and plot it as a heatmap using Plotly:
 
-        >>> lines = np.array(...)                   # shape (N, M >= 7)
-        >>> lines2d = lines[:, [0, 1, 2, 4, 5]]     # select x, y of lines
-        >>> number_of_pixels = [10, 10]
-        >>> pixels = pept.Pixels.from_lines(lines2d, number_of_pixels)
-
-        >>> grapher = pept.visualisation.PlotlyGrapher2D()
-        >>> grapher.add_pixels(pixels)
-        >>> grapher.show()
-
-        Or add them directly to a raw `plotly.graph_objs` figure:
-
+        >>> import konigcell as kc
+        >>> import numpy as np
         >>> import plotly.graph_objs as go
+
+        >>> pixels_raw = np.arange(150).reshape(10, 15)
+        >>> pixels = kc.Pixels(pixels_raw, [-5, 5], [-5, 10])
+
         >>> fig = go.Figure()
         >>> fig.add_trace(pixels.heatmap_trace())
         >>> fig.show()
@@ -391,13 +364,15 @@ class Pixels(np.ndarray):
         heatmap = dict(
             x = x,
             y = y,
-            z = self,
+            z = self.pixels,
             colorscale = colorscale,
             transpose = transpose,
             xgap = xgap,
             ygap = ygap,
         )
 
+        # If you see this error, it means you don't have Plotly; install it
+        # with `pip install plotly`
         return go.Heatmap(heatmap)
 
 
@@ -431,14 +406,16 @@ class Pixels(np.ndarray):
 
         '''
 
+        # If you see this error, it means you don't have Matplotlib; install it
+        # with `pip install matplotlib`
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
         else:
             fig = plt.gcf()
 
-        # Plot the values in pixels (this class is a numpy array subclass)
-        ax.imshow(np.rot90(self))
+        # Plot the values in pixels
+        ax.imshow(np.rot90(self.pixels))
 
         # Compute the pixel centres and set them in the Matplotlib image
         x = self.pixel_grid[0]
@@ -458,29 +435,35 @@ class Pixels(np.ndarray):
         return fig, ax
 
 
-    def __str__(self):
-        # Shown when calling print(class)
-        docstr = (
-            f"{self.__array__()}\n\n"
-            f"shape =               {self.shape}\n"
-            f"pixel_size =          {self.pixel_size}\n\n"
-            f"xlim =                {self.xlim}\n"
-            f"ylim =                {self.ylim}\n"
-            f"pixel_grid:\n"
-            f"([{self.pixel_grid[0][0]} ... {self.pixel_grid[0][-1]}],\n"
-            f" [{self.pixel_grid[1][0]} ... {self.pixel_grid[1][-1]}])"
-        )
-
-        return docstr
-
-
     def __repr__(self):
-        # Shown when writing the class on a REPR
-        docstr = (
-            "Class instance that inherits from `konigcell.Pixels`.\n"
-            f"Type:\n{type(self)}\n\n"
-            "Attributes\n----------\n"
-            f"{self.__str__()}"
-        )
+        # String representation of the class
+        name = "Pixels"
+        underline = "-" * len(name)
 
-        return docstr
+        # Custom printing of the .lines and .samples_indices arrays
+        with np.printoptions(threshold = 5, edgeitems = 2):
+            pixels_str = f"{textwrap.indent(str(self.pixels), '  ')}"
+
+        # Pretty-printing extra attributes
+        attrs_str = ""
+        if self.attrs:
+            items = []
+            for k, v in self.attrs.items():
+                s = f"  {k.__repr__()}: {v}"
+                if len(s) > 75:
+                    s = s[:72] + "..."
+                items.append(s)
+            attrs_str = "\n" + "\n".join(items) + "\n"
+
+        # Return constructed string
+        return (
+            f"{name}\n{underline}\n"
+            f"xlim = {self.xlim}\n"
+            f"ylim = {self.ylim}\n"
+            f"pixels = \n"
+            f"  (shape: {self.pixels.shape})\n"
+            f"{pixels_str}\n"
+            "attrs = {"
+            f"{attrs_str}"
+            "}\n"
+        )
