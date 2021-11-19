@@ -35,22 +35,19 @@ def test_dynamic3d():
 
     # Testing different modes of execution return the same results
     voxels = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
-                          resolution = resolution, executor = "seq")
+                          resolution = resolution, max_workers = 1)
     voxels2 = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution, verbose = False)
     voxels3 = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
-                           resolution = resolution, max_workers = 1)
-    voxels4 = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution,
                            max_workers = num_particles)
-    voxels5 = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
+    voxels4 = kc.dynamic3d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution,
                            executor = ProcessPoolExecutor)
 
     assert np.isclose(voxels.voxels, voxels2.voxels).all()
     assert np.isclose(voxels.voxels, voxels3.voxels).all()
     assert np.isclose(voxels.voxels, voxels4.voxels).all()
-    assert np.isclose(voxels.voxels, voxels5.voxels).all()
 
     # Testing different settings work
     kc.dynamic3d(positions, kc.RATIO, radii = radii, resolution = resolution)
@@ -79,6 +76,11 @@ def test_dynamic3d():
         # `resolution` has wrong numbers
         kc.dynamic3d(positions, kc.ONE, resolution = (1, 1, 1))
 
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.dynamic3d(positions, kc.ONE, np.ones(len(positions)),
+                     resolution = (2, 2, 2))
+
 
 def test_static3d():
     # Generate random 3D particles / trajectories
@@ -92,22 +94,19 @@ def test_static3d():
 
     # Testing different modes of execution return the same results
     voxels = kc.static3d(positions, kc.INTERSECTION, radii = radii,
-                         resolution = resolution, executor = "seq")
+                         resolution = resolution, max_workers = 1)
     voxels2 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution, verbose = False)
     voxels3 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
-                          resolution = resolution, max_workers = 1)
-    voxels4 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution,
                           max_workers = num_particles)
-    voxels5 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
+    voxels4 = kc.static3d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution,
                           executor = ProcessPoolExecutor)
 
     assert np.isclose(voxels.voxels, voxels2.voxels).all()
     assert np.isclose(voxels.voxels, voxels3.voxels).all()
     assert np.isclose(voxels.voxels, voxels4.voxels).all()
-    assert np.isclose(voxels.voxels, voxels5.voxels).all()
 
     # Testing different settings work
     kc.static3d(positions, kc.RATIO, radii = radii, resolution = resolution)
@@ -135,3 +134,95 @@ def test_static3d():
     with pytest.raises(ValueError):
         # `resolution` has wrong numbers
         kc.static3d(positions, kc.ONE, resolution = (1, 1, 1))
+
+
+def test_dynamic_prob3d():
+    # Generate random 3D particles / trajectories
+    np.random.seed(0)
+
+    num_particles = 1000
+    resolution = (50, 50, 50)
+
+    positions = generate((num_particles, 3), -10, 10)
+    values = generate(num_particles - 1, 1, 2)
+    radii = generate(num_particles, 0.1, 2)
+
+    voxels = kc.dynamic_prob3d(positions, values, radii = radii,
+                               resolution = resolution)
+
+    # Testing different settings work
+    kc.dynamic_prob3d(positions, values, radii = radii,
+                      resolution = resolution)
+    kc.dynamic_prob3d(positions, values, voxels = voxels, max_workers = 1)
+    kc.dynamic_prob3d(positions, values, xlim = [-10, 10], ylim = [-10, 10],
+                      zlim = [-10, 10], resolution = resolution)
+    kc.dynamic_prob3d(positions, values, resolution = resolution)
+    kc.dynamic_prob3d(positions, values, radii = 0, resolution = resolution)
+
+    # Testing error cases
+    with pytest.raises(ValueError):
+        # Missing resolution
+        kc.dynamic_prob3d(positions, values)
+
+    with pytest.raises(AttributeError):
+        # `pixels` has wrong type
+        kc.dynamic_prob3d(positions, values, voxels = 0)
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong shape
+        kc.dynamic_prob3d(positions, values, resolution = (1,))
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong numbers
+        kc.dynamic_prob3d(positions, values, resolution = (1, 1, 1))
+
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.dynamic_prob3d(positions, np.ones(len(positions)),
+                          resolution = (2, 2, 2))
+
+
+def test_static_prob3d():
+    # Generate random 3D particles / trajectories
+    np.random.seed(0)
+
+    num_particles = 1000
+    resolution = (50, 50, 50)
+
+    positions = generate((num_particles, 3), -10, 10)
+    values = generate(num_particles, 1, 2)
+    radii = generate(num_particles, 0.1, 2)
+
+    voxels = kc.static_prob3d(positions, values, radii = radii,
+                              resolution = resolution)
+
+    # Testing different settings work
+    kc.static_prob3d(positions, values, radii = radii,
+                     resolution = resolution)
+    kc.static_prob3d(positions, values, voxels = voxels, max_workers = 1)
+    kc.static_prob3d(positions, values, xlim = [-10, 10], ylim = [-10, 10],
+                     zlim = [-10, 10], resolution = resolution)
+    kc.static_prob3d(positions, values, resolution = resolution)
+    kc.static_prob3d(positions, values, radii = 0, resolution = resolution)
+
+    # Testing error cases
+    with pytest.raises(ValueError):
+        # Missing resolution
+        kc.static_prob3d(positions, values)
+
+    with pytest.raises(AttributeError):
+        # `pixels` has wrong type
+        kc.static_prob3d(positions, values, voxels = 0)
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong shape
+        kc.static_prob3d(positions, values, resolution = (1,))
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong numbers
+        kc.static_prob3d(positions, values, resolution = (1, 1, 1))
+
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.static_prob3d(positions, np.ones(len(positions) - 1),
+                         resolution = (2, 2, 2))

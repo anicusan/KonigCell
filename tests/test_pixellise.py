@@ -35,22 +35,19 @@ def test_dynamic2d():
 
     # Testing different modes of execution return the same results
     pixels = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
-                          resolution = resolution, executor = "seq")
+                          resolution = resolution, max_workers = 1)
     pixels2 = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution, verbose = False)
     pixels3 = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
-                           resolution = resolution, max_workers = 1)
-    pixels4 = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution,
                            max_workers = num_particles)
-    pixels5 = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
+    pixels4 = kc.dynamic2d(positions, kc.INTERSECTION, radii = radii,
                            resolution = resolution,
                            executor = ProcessPoolExecutor)
 
     assert np.isclose(pixels.pixels, pixels2.pixels).all()
     assert np.isclose(pixels.pixels, pixels3.pixels).all()
     assert np.isclose(pixels.pixels, pixels4.pixels).all()
-    assert np.isclose(pixels.pixels, pixels5.pixels).all()
 
     # Testing different settings work
     kc.dynamic2d(positions, kc.RATIO, radii = radii, resolution = resolution)
@@ -79,6 +76,11 @@ def test_dynamic2d():
         # `resolution` has wrong numbers
         kc.dynamic2d(positions, kc.ONE, resolution = (1, 1))
 
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.dynamic2d(positions, kc.ONE, np.ones(len(positions)),
+                     resolution = (2, 2))
+
 
 def test_static2d():
     # Generate random 3D particles / trajectories
@@ -92,22 +94,19 @@ def test_static2d():
 
     # Testing different modes of execution return the same results
     pixels = kc.static2d(positions, kc.INTERSECTION, radii = radii,
-                         resolution = resolution, executor = "seq")
+                         resolution = resolution, max_workers = 1)
     pixels2 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution, verbose = False)
     pixels3 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
-                          resolution = resolution, max_workers = 1)
-    pixels4 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution,
                           max_workers = num_particles)
-    pixels5 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
+    pixels4 = kc.static2d(positions, kc.INTERSECTION, radii = radii,
                           resolution = resolution,
                           executor = ProcessPoolExecutor)
 
     assert np.isclose(pixels.pixels, pixels2.pixels).all()
     assert np.isclose(pixels.pixels, pixels3.pixels).all()
     assert np.isclose(pixels.pixels, pixels4.pixels).all()
-    assert np.isclose(pixels.pixels, pixels5.pixels).all()
 
     # Testing different settings work
     kc.static2d(positions, kc.RATIO, radii = radii, resolution = resolution)
@@ -135,3 +134,100 @@ def test_static2d():
     with pytest.raises(ValueError):
         # `resolution` has wrong numbers
         kc.static2d(positions, kc.ONE, resolution = (1, 1))
+
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.static_prob2d(positions, np.ones(len(positions) - 1),
+                         resolution = (2, 2))
+
+
+def test_dynamic_prob2d():
+    # Generate random 3D particles / trajectories
+    np.random.seed(0)
+
+    num_particles = 10_000
+    resolution = (100, 100)
+
+    positions = generate((num_particles, 2), -10, 10)
+    values = generate(num_particles - 1, 1, 2)
+    radii = generate(num_particles, 0.1, 2)
+
+    pixels = kc.dynamic_prob2d(positions, values, radii = radii,
+                               resolution = resolution)
+
+    # Testing different settings work
+    kc.dynamic_prob2d(positions, values, radii = radii,
+                      resolution = resolution)
+    kc.dynamic_prob2d(positions, values, pixels = pixels, max_workers = 1)
+    kc.dynamic_prob2d(positions, values, xlim = [-10, 10], ylim = [-10, 10],
+                      resolution = resolution)
+    kc.dynamic_prob2d(positions, values, resolution = resolution)
+    kc.dynamic_prob2d(positions, values, radii = 0, resolution = resolution)
+
+    # Testing error cases
+    with pytest.raises(ValueError):
+        # Missing resolution
+        kc.dynamic_prob2d(positions, values)
+
+    with pytest.raises(AttributeError):
+        # `pixels` has wrong type
+        kc.dynamic_prob2d(positions, values, pixels = 0)
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong shape
+        kc.dynamic_prob2d(positions, values, resolution = (1,))
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong numbers
+        kc.dynamic_prob2d(positions, values, resolution = (1, 1))
+
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.dynamic_prob2d(positions, np.ones(len(positions)),
+                          resolution = (2, 2))
+
+
+def test_static_prob2d():
+    # Generate random 3D particles / trajectories
+    np.random.seed(0)
+
+    num_particles = 10_000
+    resolution = (100, 100)
+
+    positions = generate((num_particles, 2), -10, 10)
+    values = generate(num_particles, 1, 2)
+    radii = generate(num_particles, 0.1, 2)
+
+    pixels = kc.static_prob2d(positions, values, radii = radii,
+                              resolution = resolution)
+
+    # Testing different settings work
+    kc.static_prob2d(positions, values, radii = radii,
+                     resolution = resolution)
+    kc.static_prob2d(positions, values, pixels = pixels, max_workers = 1)
+    kc.static_prob2d(positions, values, xlim = [-10, 10], ylim = [-10, 10],
+                     resolution = resolution)
+    kc.static_prob2d(positions, values, resolution = resolution)
+    kc.static_prob2d(positions, values, radii = 0, resolution = resolution)
+
+    # Testing error cases
+    with pytest.raises(ValueError):
+        # Missing resolution
+        kc.static_prob2d(positions, values)
+
+    with pytest.raises(AttributeError):
+        # `pixels` has wrong type
+        kc.static_prob2d(positions, values, pixels = 0)
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong shape
+        kc.static_prob2d(positions, values, resolution = (1,))
+
+    with pytest.raises(ValueError):
+        # `resolution` has wrong numbers
+        kc.static_prob2d(positions, values, resolution = (1, 1))
+
+    with pytest.raises(ValueError):
+        # Wrong number of `values`
+        kc.static_prob2d(positions, np.ones(len(positions) - 1),
+                         resolution = (2, 2))
