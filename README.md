@@ -3,13 +3,11 @@
 ![KonigCell](/docs/source/_static/logo.png?raw=true "KonigCell Logo.")
 
 
-#### Quantitative, Fast Grid-Based Fields Calculations in 2D and 3D
-##### Residence Time Distributions, Velocity Grids, Eulerian Cell Projections etc.
+#### **Quantitative, Fast Grid-Based Fields Calculations in 2D and 3D** - Residence Time Distributions, Velocity Grids, Eulerian Cell Projections etc.
 
 That sounds dry as heck.
 
-#### **Project moving particles' trajectories (experimental or simulated) onto 2D or 3D
-grids with infinite resolution.**
+#### **Project moving particles' trajectories (experimental or simulated) onto 2D or 3D grids with infinite resolution.**
 
 Better? No? Here are some figures produced by KonigCell:
 
@@ -21,7 +19,7 @@ Better? No? Here are some figures produced by KonigCell:
 This is, to my knowledge, the only library that accurately projects particle
 trajectories onto grids - that is, taking their full projected area / volume into
 account (and not approximating them as points / lines). It's also the only one creating
-quantitative 3D projections
+quantitative 3D projections.
 
 And it is *fast* - 1,000,000 particle positions can be rasterized onto a 512x512
 grid in 7 seconds on my 16-thread i9 CPU. The code is fully parallelised on
@@ -74,10 +72,10 @@ To build the latest development version from GitHub:
 The C libraries in the `konigcell2d` and `konigcell3d` directories in this repository; they
 contain instructions for compiling and using the low-level subroutines. All code is fully
 commented and follows a portable subset of the C99 standard - so no VLAs, weird macros or
-specific compiler extensions. Even MSVC compiles it!
+compiler-specific extensions. Even MSVC compiles it!
 
 Both libraries are effectively single-source - they should be as straightforward as possible
-to integrate in other C / C++ codebases, or interface from higher-level programming
+to integrate in other C / C++ codebases, or interface with from higher-level programming
 languages.
 
 
@@ -88,6 +86,7 @@ The `examples` directory contains some Python scripts using the high-level Pytho
 and the low-level Cython interfaces. The `konigcell2d` and `konigcell3d` contain C examples.
 
 [TODO: add documentation link]
+
 [TODO: add example code on the repo README too]
 
 
@@ -114,14 +113,14 @@ And thanks to Dr. Kit Windows-Yule for putting up with my bonkers ideas.
 ## Citing
 If you use this library in your research, you are kindly asked to cite:
 
-    <Paper after publication>
+> <Paper after publication>
 
 
 This library would not have been possible without the excellent `r3d` library
 (https://github.com/devonmpowell/r3d) which forms the very core of the C
 subroutines; if you use KonigCell in your work, please also cite:
 
-    Powell D, Abel T. An exact general remeshing scheme applied to physically conservative voxelization. Journal of Computational Physics. 2015 Sep 15;297:340-56.
+> Powell D, Abel T. An exact general remeshing scheme applied to physically conservative voxelization. Journal of Computational Physics. 2015 Sep 15;297:340-56.
 
 
 
