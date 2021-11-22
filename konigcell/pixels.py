@@ -52,7 +52,7 @@ class Pixels:
     pixel_size: (2,) np.ndarray[ndim=1, dtype=float64]
         The lengths of a pixel in the x- and y-dimensions, respectively.
 
-    pixel_grid: list[(M+1,) np.ndarray, (N+1,) np.ndarray]
+    pixel_grids: list[(M+1,) np.ndarray, (N+1,) np.ndarray]
         A list containing the pixel gridlines in the x- and y-dimensions.
         Each dimension's gridlines are stored as a numpy of the pixel
         delimitations, such that it has length (M + 1), where M is the number
@@ -87,7 +87,7 @@ class Pixels:
     konigcell.dynamic_prob2d : 2D probability distribution of a quantity.
     '''
     __slots__ = ("_pixels", "_xlim", "_ylim", "_attrs", "_pixel_size",
-                 "_pixel_grid", "_lower", "_upper")
+                 "_pixel_grids", "_lower", "_upper")
 
     def __init__(self, pixels_array, xlim, ylim, **kwargs):
         '''`Pixels` class constructor.
@@ -137,7 +137,7 @@ class Pixels:
 
         xlim = np.asarray(xlim, dtype = np.float64)
 
-        if xlim.ndim != 1 or len(xlim) != 2:
+        if xlim.ndim != 1 or len(xlim) != 2 or xlim[0] >= xlim[1]:
             raise ValueError(textwrap.fill((
                 "The input `xlim` parameter must be a list with exactly "
                 "two values, corresponding to the minimum and maximum "
@@ -147,7 +147,7 @@ class Pixels:
 
         ylim = np.asarray(ylim, dtype = np.float64)
 
-        if ylim.ndim != 1 or len(ylim) != 2:
+        if ylim.ndim != 1 or len(ylim) != 2 or ylim[0] >= ylim[1]:
             raise ValueError(textwrap.fill((
                 "The input `ylim` parameter must be a list with exactly "
                 "two values, corresponding to the minimum and maximum "
@@ -195,15 +195,15 @@ class Pixels:
 
 
     @property
-    def pixel_grid(self):
+    def pixel_grids(self):
         # Compute once upon the first access and cache
-        if not hasattr(self, "_pixel_grid"):
-            self._pixel_grid = [
+        if not hasattr(self, "_pixel_grids"):
+            self._pixel_grids = [
                 np.linspace(lim[0], lim[1], self._pixels.shape[i] + 1)
                 for i, lim in enumerate((self._xlim, self._ylim))
             ]
 
-        return self._pixel_grid
+        return self._pixel_grids
 
 
     @property
@@ -317,6 +317,110 @@ class Pixels:
         return Pixels(pixels_array, xlim, ylim, **kwargs)
 
 
+    def from_physical(self, locations, corner = False):
+        '''Transform `locations` from physical dimensions to pixel indices. If
+        `corner = True`, return the index of the bottom left corner of each
+        pixel; otherwise, use the pixel centres.
+
+        Examples
+        --------
+        Create a simple `konigcell.Pixels` grid, spanning [-5, 5] mm in the
+        X-dimension and [10, 20] mm in the Y-dimension:
+
+        >>> import konigcell as kc
+        >>> pixels = kc.Pixels.zeros((5, 5), xlim=[-5, 5], ylim=[10, 20])
+        >>> pixels
+        Pixels
+        ------
+        xlim = [-5.  5.]
+        ylim = [10. 20.]
+        pixels =
+          (shape: (5, 5))
+          [[0. 0. ... 0. 0.]
+           [0. 0. ... 0. 0.]
+           ...
+           [0. 0. ... 0. 0.]
+           [0. 0. ... 0. 0.]]
+        attrs = {}
+
+        >>> pixels.pixel_size
+        array([2., 2.])
+
+        Transform physical coordinates to pixel coordinates:
+
+        >>> pixels.from_physical([-5, 10], corner = True)
+        array([0., 0.])
+
+        >>> pixels.from_physical([-5, 10])
+        array([-0.5, -0.5])
+
+        The pixel coordinates are returned exactly, as real numbers. For pixel
+        indices, round them into values:
+
+        >>> pixels.from_physical([0, 15]).astype(int)
+        array([2, 2])
+
+        Multiple coordinates can be given as a 2D array / list of lists:
+
+        >>> pixels.from_physical([[0, 15], [5, 20]])
+        array([[2. , 2. ],
+               [4.5, 4.5]])
+
+        '''
+
+        offset = 0. if corner else self.pixel_size / 2
+        return (locations - self.lower - offset) / self.pixel_size
+
+
+    def to_physical(self, indices, corner = False):
+        '''Transform `indices` from pixel indices to physical dimensions. If
+        `corner = True`, return the coordinates of the bottom left corner of
+        each pixel; otherwise, use the pixel centres.
+
+        Examples
+        --------
+        Create a simple `konigcell.Pixels` grid, spanning [-5, 5] mm in the
+        X-dimension and [10, 20] mm in the Y-dimension:
+
+        >>> import konigcell as kc
+        >>> pixels = kc.Pixels.zeros((5, 5), xlim=[-5, 5], ylim=[10, 20])
+        >>> pixels
+        Pixels
+        ------
+        xlim = [-5.  5.]
+        ylim = [10. 20.]
+        pixels =
+          (shape: (5, 5))
+          [[0. 0. ... 0. 0.]
+           [0. 0. ... 0. 0.]
+           ...
+           [0. 0. ... 0. 0.]
+           [0. 0. ... 0. 0.]]
+        attrs = {}
+
+        >>> pixels.pixel_size
+        array([2., 2.])
+
+        Transform physical coordinates to pixel coordinates:
+
+        >>> pixels.to_physical([0, 0], corner = True)
+        array([-5., 10.])
+
+        >>> pixels.to_physical([0, 0])
+        array([-4., 11.])
+
+        Multiple coordinates can be given as a 2D array / list of lists:
+
+        >>> pixels.to_physical([[0, 0], [4, 3]])
+        array([[-4., 11.],
+               [ 4., 17.]])
+
+        '''
+
+        offset = 0. if corner else self.pixel_size / 2
+        return self.lower + indices * self.pixel_size + offset
+
+
     def heatmap_trace(
         self,
         colorscale = "Magma",
@@ -355,10 +459,10 @@ class Pixels:
         '''
 
         # Compute the pixel centres
-        x = self.pixel_grid[0]
+        x = self.pixel_grids[0]
         x = (x[1:] + x[:-1]) / 2
 
-        y = self.pixel_grid[1]
+        y = self.pixel_grids[1]
         y = (y[1:] + y[:-1]) / 2
 
         heatmap = dict(
@@ -418,16 +522,16 @@ class Pixels:
         ax.imshow(np.rot90(self.pixels))
 
         # Compute the pixel centres and set them in the Matplotlib image
-        x = self.pixel_grid[0]
+        x = self.pixel_grids[0]
         x = (x[1:] + x[:-1]) / 2
 
-        y = self.pixel_grid[1]
+        y = self.pixel_grids[1]
         y = (y[1:] + y[:-1]) / 2
 
         # Matplotlib shows numbers in a long format ("102.000032411"), so round
         # them to two decimals before plotting
-        ax.set_xticklabels(np.round(x, 2))
-        ax.set_yticklabels(np.round(y, 2))
+        # ax.set_xticklabels(np.round(x, 2))
+        # ax.set_yticklabels(np.round(y, 2))
 
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")

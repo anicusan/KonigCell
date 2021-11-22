@@ -87,7 +87,7 @@ class Voxels:
     konigcell.dynamic_prob3d : 3D probability distribution of a quantity.
     '''
     __slots__ = ("_voxels", "_xlim", "_ylim", "_zlim", "_attrs", "_voxel_size",
-                 "_voxel_grid", "_lower", "_upper")
+                 "_voxel_grids", "_lower", "_upper")
 
     def __init__(self, voxels_array, xlim, ylim, zlim, **kwargs):
         '''`Voxels` class constructor.
@@ -345,6 +345,147 @@ class Voxels:
         return Voxels(zero_voxels, xlim, ylim, zlim, **kwargs)
 
 
+    def from_physical(self, locations, corner = False):
+        '''Transform `locations` from physical dimensions to voxel indices. If
+        `corner = True`, return the index of the bottom left corner of each
+        voxel; otherwise, use the voxel centres.
+
+        Examples
+        --------
+        Create a simple `konigcell.Voxels` grid, spanning [-5, 5] mm in the
+        X-dimension, [10, 20] mm in the Y-dimension and [0, 10] in Z:
+
+        >>> import konigcell as kc
+        >>> voxels = kc.Voxels.zeros((5, 5, 5), xlim=[-5, 5], ylim=[10, 20],
+                                     zlim=[0, 10])
+        >>> voxels
+        Voxels
+        ------
+        xlim = [-5.  5.]
+        ylim = [10. 20.]
+        zlim = [10. 20.]
+        voxels =
+          (shape: (5, 5, 5))
+          [[[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           ...
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]]
+        attrs = {}
+
+        >>> voxels.voxel_size
+        array([2., 2., 2.])
+
+        Transform physical coordinates to voxel coordinates:
+
+        >>> voxels.from_physical([-5, 10, 0], corner = True)
+        array([0., 0., 0.])
+
+        >>> voxels.from_physical([-5, 10, 0])
+        array([-0.5, -0.5, -0.5])
+
+        The voxel coordinates are returned exactly, as real numbers. For voxel
+        indices, round them into values:
+
+        >>> voxels.from_physical([0, 15, 0]).astype(int)
+        array([2, 2, 0])
+
+        Multiple coordinates can be given as a 2D array / list of lists:
+
+        >>> voxels.from_physical([[0, 15, 0], [5, 20, 10]])
+        array([[ 2. ,  2. , -0.5],
+               [ 4.5,  4.5,  4.5]])
+
+        '''
+
+        offset = 0. if corner else self.voxel_size / 2
+        return (locations - self.lower - offset) / self.voxel_size
+
+
+    def to_physical(self, indices, corner = False):
+        '''Transform `indices` from voxel indices to physical dimensions. If
+        `corner = True`, return the coordinates of the bottom left corner of
+        each voxel; otherwise, use the voxel centres.
+
+        Examples
+        --------
+        Create a simple `konigcell.Voxels` grid, spanning [-5, 5] mm in the
+        X-dimension, [10, 20] mm in the Y-dimension and [0, 10] in Z:
+
+        >>> import konigcell as kc
+        >>> voxels = kc.Voxels.zeros((5, 5, 5), xlim=[-5, 5], ylim=[10, 20],
+                                     zlim=[0, 10])
+        >>> voxels
+        Voxels
+        ------
+        xlim = [-5.  5.]
+        ylim = [10. 20.]
+        zlim = [10. 20.]
+        voxels =
+          (shape: (5, 5, 5))
+          [[[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           ...
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]
+           [[0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]
+            ...
+            [0. 0. ... 0. 0.]
+            [0. 0. ... 0. 0.]]]
+        attrs = {}
+
+        >>> voxels.voxel_size
+        array([2., 2., 2.])
+
+        Transform physical coordinates to voxel coordinates:
+
+        >>> voxels.to_physical([0, 0, 0], corner = True)
+        array([-5., 10., 0.])
+
+        >>> voxels.to_physical([0, 0, 0])
+        array([-4., 11., 1.])
+
+        Multiple coordinates can be given as a 2D array / list of lists:
+
+        >>> voxels.to_physical([[0, 0, 0], [4, 4, 3]])
+        array([[-4., 11.,  1.],
+               [ 4., 19.,  7.]])
+
+        '''
+
+        offset = 0. if corner else self.voxel_size / 2
+        return self.lower + indices * self.voxel_size + offset
+
+
+
     def plot(
         self,
         condition = lambda voxel_data: voxel_data > 0,
@@ -461,7 +602,7 @@ class Voxels:
         grid.dimensions = np.array(vox.shape) + 1
         grid.origin = self.lower
         grid.spacing = self.voxel_size
-        grid.cell_arrays["values"] = vox.flatten(order="F")
+        grid.cell_data["values"] = vox.flatten(order="F")
 
         # Create PyVista volumetric / voxel plot with an interactive clipper
         fig = pv.Plotter()
@@ -493,7 +634,7 @@ class Voxels:
         grid.dimensions = np.array(vox.shape) + 1
         grid.origin = self.lower
         grid.spacing = self.voxel_size
-        grid.cell_arrays["values"] = vox.flatten(order="F")
+        grid.cell_data["values"] = vox.flatten(order="F")
 
         return grid
 

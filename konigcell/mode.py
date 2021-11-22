@@ -6,6 +6,27 @@
 # Date   : 20.05.2021
 
 
+'''Cell Value Weighting Modes
+
+Attributes
+----------
+RATIO : int32
+    Weight cell values by the ratio of the intersected cell area / volume and
+    the total circle area / sphere volume.
+
+INTERSECTION : int32
+    Weight cell values by their intersected area / volume with the rasterized
+    shape.
+
+PARTICLE : int32
+    Weight cell values by the rasterized shape's area / volume.
+
+ONE : int32
+    Add factors to cells with no weighting.
+
+'''
+
+
 import numpy as np
 
 
