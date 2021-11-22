@@ -1,7 +1,7 @@
 name: Build and upload KonigCell to PyPI on a OS and Python version matrix
 
 env:
-  CIBW_TEST_REQUIRES: pytest==4.6
+  CIBW_TEST_REQUIRES: pytest==4.6.11
   CIBW_TEST_COMMAND: "pytest {project}/tests"
 
 # CIBW_BUILD: cp37-* cp38-* cp39-*
