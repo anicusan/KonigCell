@@ -27,8 +27,8 @@ def test_dynamic3d():
     # Generate random 3D particles / trajectories
     np.random.seed(0)
 
-    num_particles = 1000
-    resolution = (50, 50, 50)
+    num_particles = 100
+    resolution = (10, 10, 10)
 
     positions = generate((num_particles, 3), -10, 10)
     radii = generate(num_particles, 0.1, 2)
@@ -86,8 +86,8 @@ def test_static3d():
     # Generate random 3D particles / trajectories
     np.random.seed(0)
 
-    num_particles = 1000
-    resolution = (50, 50, 50)
+    num_particles = 100
+    resolution = (10, 10, 10)
 
     positions = generate((num_particles, 3), -10, 10)
     radii = generate(num_particles, 0.1, 2)
@@ -140,8 +140,8 @@ def test_dynamic_prob3d():
     # Generate random 3D particles / trajectories
     np.random.seed(0)
 
-    num_particles = 1000
-    resolution = (50, 50, 50)
+    num_particles = 100
+    resolution = (10, 10, 10)
 
     positions = generate((num_particles, 3), -10, 10)
     values = generate(num_particles - 1, 1, 2)
@@ -186,8 +186,8 @@ def test_static_prob3d():
     # Generate random 3D particles / trajectories
     np.random.seed(0)
 
-    num_particles = 1000
-    resolution = (50, 50, 50)
+    num_particles = 100
+    resolution = (10, 10, 10)
 
     positions = generate((num_particles, 3), -10, 10)
     values = generate(num_particles, 1, 2)
