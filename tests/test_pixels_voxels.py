@@ -49,9 +49,9 @@ def test_pixels():
     pixels.xlim
     pixels.ylim
 
-    # Test plotting functions
-    pixels.heatmap_trace()
-    pixels.plot()
+    # Test plotting functions - only locally, as they are optional deps
+    # pixels.heatmap_trace()
+    # pixels.plot()
 
 
 def test_voxels():
@@ -87,11 +87,11 @@ def test_voxels():
     voxels.xlim
     voxels.ylim
 
-    # Test plotting functions
-    voxels.heatmap_trace(ix = 2)
-    voxels.plot()
-    voxels.vtk()
-    voxels.plot_volumetric()
-    voxels.cube_trace((2, 2, 2))
-    voxels.cubes_traces()
-    voxels.scatter_trace()
+    # Test plotting functions - only locally, as they are optional deps
+    # voxels.heatmap_trace(ix = 2)
+    # voxels.plot()
+    # voxels.vtk()
+    # voxels.plot_volumetric()
+    # voxels.cube_trace((2, 2, 2))
+    # voxels.cubes_traces()
+    # voxels.scatter_trace()
