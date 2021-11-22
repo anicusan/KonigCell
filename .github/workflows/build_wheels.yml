@@ -1,4 +1,4 @@
-name: Build and upload pept to PyPI on a OS and Python version matrix
+name: Build and upload KonigCell to PyPI on a OS and Python version matrix
 
 env:
   CIBW_BUILD: cp37-* cp38-* cp39-*
@@ -12,7 +12,7 @@ on: workflow_dispatch
 
 jobs:
   build_wheels:
-    name: Build pept wheels on ${{ matrix.os }}
+    name: Build KonigCell wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
