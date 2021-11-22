@@ -1,9 +1,10 @@
 name: Build and upload KonigCell to PyPI on a OS and Python version matrix
 
 env:
-  CIBW_BUILD: cp37-* cp38-* cp39-*
-  CIBW_TEST_REQUIRES: pytest
+  CIBW_TEST_REQUIRES: pytest==4.6
   CIBW_TEST_COMMAND: "pytest {project}/tests"
+
+# CIBW_BUILD: cp37-* cp38-* cp39-*
 
 # Build on every branch push, tag push, and pull request change:
 # on: [push, pull_request]
