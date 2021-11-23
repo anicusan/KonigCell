@@ -522,11 +522,11 @@ class Pixels:
         ax.imshow(np.rot90(self.pixels))
 
         # Compute the pixel centres and set them in the Matplotlib image
-        x = self.pixel_grids[0]
-        x = (x[1:] + x[:-1]) / 2
+        # x = self.pixel_grids[0]
+        # x = (x[1:] + x[:-1]) / 2
 
-        y = self.pixel_grids[1]
-        y = (y[1:] + y[:-1]) / 2
+        # y = self.pixel_grids[1]
+        # y = (y[1:] + y[:-1]) / 2
 
         # Matplotlib shows numbers in a long format ("102.000032411"), so round
         # them to two decimals before plotting
