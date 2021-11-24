@@ -1,0 +1,9 @@
+# LGTM does not include the C standard math library (libm). The "-lm" compiler
+# flag has no effect. Help?
+#
+# Until a fix is found, compile the code as C++, which *does* include libm.
+extraction:
+  cpp:
+    before_index: "export CC=g++"
+    index:
+      build_command: "make"

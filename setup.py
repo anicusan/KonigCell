@@ -176,7 +176,7 @@ setuptools.setup(
     url = url,
 
     install_requires = required,
-    extras_requires = extras,
+    extras_require = extras,
     include_package_data = True,
     packages = setuptools.find_packages(),
 
