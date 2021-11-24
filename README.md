@@ -82,6 +82,10 @@ contain instructions for compiling and using the low-level subroutines. All code
 commented and follows a portable subset of the C99 standard - so no VLAs, weird macros or
 compiler-specific extensions. Even MSVC compiles it!
 
+You can run `make` in the `konigcell2d` or `konigcell3d` directories to build shared
+libraries and the example executables under `-Wall -Werror -Wextra` like a stickler. Running
+`make` in the repository root builds both libraries.
+
 Both libraries are effectively single-source - they should be as straightforward as possible
 to integrate in other C / C++ codebases, or interface with from higher-level programming
 languages.
@@ -93,7 +97,7 @@ languages.
 The `examples` directory contains some Python scripts using the high-level Python routines
 and the low-level Cython interfaces. The `konigcell2d` and `konigcell3d` contain C examples.
 
-[TODO: add documentation link]
+Full documentation is available [here](https://konigcell.readthedocs.io/).
 
 [TODO: add example code on the repo README too]
 
