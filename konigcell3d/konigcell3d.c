@@ -420,14 +420,14 @@ kc3d_real       kc3d_cylinder(kc3d_poly *poly,
  * The area ratio is multiplied by `factor` and *added* onto the global `grid`.
  * The local grid `lgrid` is reinitialised to zero at the end of the function.
  */
-void            kc3d_rasterize_ll(kc3d_poly *restrict   poly,
-                                  kc3d_real             volume,
-                                  kc3d_real *restrict   grid,
-                                  kc3d_real *restrict   lgrid,
-                                  const kc3d_int        dims[3],
-                                  const kc3d_rvec3      grid_size,
-                                  const kc3d_real       factor,
-                                  const kc3d_mode       mode)
+void            kc3d_rasterize_ll(kc3d_poly* KC3D_RESTRICT  poly,
+                                  kc3d_real                 volume,
+                                  kc3d_real* KC3D_RESTRICT  grid,
+                                  kc3d_real* KC3D_RESTRICT  lgrid,
+                                  const kc3d_int            dims[3],
+                                  const kc3d_rvec3          grid_size,
+                                  const kc3d_real           factor,
+                                  const kc3d_mode           mode)
 {
     kc3d_dvec3  clampbox[2] = {{{0, 0, 0}}, {{dims[0], dims[1], dims[2]}}};
     kc3d_dvec3  ibox[2];        // Local grid's range of indices in the global grid

@@ -109,6 +109,16 @@ extern "C" {
 
 
 /**
+ * Use `restrict` pointers under C compilers.
+ */
+#ifdef __cplusplus
+    #define KC2D_RESTRICT
+#else
+    #define KC2D_RESTRICT restrict
+#endif
+
+
+/**
  * Some types used by KonigCell2D - especially the geometry-related ones - are borrowed from the
  * R2D library (Powell and Abel, 2015 and LA-UR-15-26964); the `r2d_` prefixes were changed to
  * `kc2d_` for consistency. The following declarations are related to R2D. See below them for the
@@ -118,9 +128,9 @@ extern "C" {
 
 /* Real type used in calculations. */
 #ifdef KC2D_SINGLE_PRECISION
-typedef float kc2d_real;
+    typedef float kc2d_real;
 #else 
-typedef double kc2d_real;
+    typedef double kc2d_real;
 #endif
 
 

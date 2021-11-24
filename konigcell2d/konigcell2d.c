@@ -323,14 +323,14 @@ kc2d_real       kc2d_cylinder(kc2d_poly *poly,
  * The area ratio is multiplied by `factor` and *added* onto the global `grid`.
  * The local grid `lgrid` is reinitialised to zero at the end of the function.
  */
-void            kc2d_rasterize_ll(kc2d_poly *restrict    poly,
-                                  kc2d_real              area,
-                                  kc2d_real *restrict    grid,
-                                  kc2d_real *restrict    lgrid,
-                                  const kc2d_int         dims[2],
-                                  const kc2d_rvec2       grid_size,
-                                  const kc2d_real        factor,
-                                  const kc2d_mode        mode)
+void            kc2d_rasterize_ll(kc2d_poly* KC2D_RESTRICT  poly,
+                                  kc2d_real                 area,
+                                  kc2d_real* KC2D_RESTRICT  grid,
+                                  kc2d_real* KC2D_RESTRICT  lgrid,
+                                  const kc2d_int            dims[2],
+                                  const kc2d_rvec2          grid_size,
+                                  const kc2d_real           factor,
+                                  const kc2d_mode           mode)
 {
     kc2d_dvec2   clampbox[2] = {{{0, 0}}, {{dims[0], dims[1]}}};
     kc2d_dvec2   ibox[2];        // Local grid's range of indices in the global grid

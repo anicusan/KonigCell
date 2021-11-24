@@ -107,6 +107,16 @@ extern "C" {
 
 
 /**
+ * Use `restrict` pointers under C compilers.
+ */
+#ifdef __cplusplus
+    #define KC3D_RESTRICT
+#else
+    #define KC3D_RESTRICT restrict
+#endif
+
+
+/**
  * Some types used by KonigCell3D - especially the geometry-related ones - are borrowed from the
  * R3D library (Powell and Abel, 2015 and LA-UR-15-26964); the `r3d_` prefixes were changed to
  * `kc3d_` for consistency. The following declarations are related to R3D. See below them for the
