@@ -19,7 +19,7 @@ int             main(void)
     kc3d_real   ylim[2] = {-10., 20.};
     kc3d_real   zlim[2] = {-10., 20.};
 
-    kc3d_real   *grid = (kc3d_real*)calloc(dims[0] * dims[1] * dims[2], sizeof(kc3d_real));
+    kc3d_real   *grid = (kc3d_real*)calloc((size_t)dims[0] * dims[1] * dims[2], sizeof(kc3d_real));
 
     kc3d_voxels voxels = {
         .grid = grid,

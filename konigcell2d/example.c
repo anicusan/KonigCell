@@ -18,8 +18,8 @@ int             main(void)
     kc2d_real   xlim[2] = {-10., 40.};
     kc2d_real   ylim[2] = {-10., 20.};
 
-    kc2d_real   *grid = (kc2d_real*)calloc(dims[0] * dims[1], sizeof(kc2d_real));
-    kc2d_real   *intersections = (kc2d_real*)calloc(dims[0] * dims[1], sizeof(kc2d_real));
+    kc2d_real   *grid = (kc2d_real*)calloc((size_t)dims[0] * dims[1], sizeof(kc2d_real));
+    kc2d_real   *intersections = (kc2d_real*)calloc((size_t)dims[0] * dims[1], sizeof(kc2d_real));
 
     kc2d_pixels pixels = {
         .grid = grid,
@@ -33,7 +33,7 @@ int             main(void)
     kc2d_real   positions[10] = {15., 5., 35., 10., -10., 15., 5., -5., 30., -5.};
     kc2d_real   radii[5] = {1.001, 2.001, 3.001, 2.001, 2.};
 
-    kc2d_real   *factors = (kc2d_real*)calloc(dims[0] * dims[1], sizeof(kc2d_real));
+    kc2d_real   *factors = (kc2d_real*)calloc((size_t)dims[0] * dims[1], sizeof(kc2d_real));
 
     for (kc2d_int i = 0; i < num_particles; ++i)
         factors[i] = 1;
