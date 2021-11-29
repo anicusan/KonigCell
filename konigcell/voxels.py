@@ -485,7 +485,6 @@ class Voxels:
         return self.lower + indices * self.voxel_size + offset
 
 
-
     def plot(
         self,
         condition = lambda voxel_data: voxel_data > 0,
@@ -891,7 +890,7 @@ class Voxels:
 
         if colorbar and color is None:
             voxel_vals = [self.voxels[tuple(fi)] for fi in filtered_indices]
-            marker.update(colorscale = "Magma", color = voxel_vals)
+            marker.update(colorscale = colorscale, color = voxel_vals)
 
             if colorbar_title is not None:
                 marker.update(colorbar = dict(title = colorbar_title))
