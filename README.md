@@ -5,6 +5,7 @@
 [![PyPI version shields.io](https://img.shields.io/pypi/v/konigcell.svg?style=flat-square)](https://pypi.python.org/pypi/konigcell/)
 [![Documentation Status](https://readthedocs.org/projects/konigcell/badge/?version=latest&style=flat-square)](https://konigcell.readthedocs.io/en/latest/?badge=latest)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/anicusan/KonigCell.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/anicusan/KonigCell/context:python)
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/anicusan/KonigCell.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/anicusan/KonigCell/context:cpp)
 [![License: MIT](https://img.shields.io/github/license/anicusan/konigcell?style=flat-square)](https://github.com/anicusan/konigcell)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/konigcell.svg?style=flat-square)](https://pypi.python.org/pypi/konigcell/)
 
