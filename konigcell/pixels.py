@@ -77,7 +77,124 @@ class Pixels:
 
     Examples
     --------
-    TODO
+    Create a zeroed 4x4 Pixels grid:
+
+    >>> import konigcell as kc
+    >>> pixels = kc.Pixels.zeros((4, 4), xlim = [0, 10], ylim = [0, 5])
+    >>> pixels
+    Pixels
+    ------
+    xlim = [ 0. 10.]
+    ylim = [0. 5.]
+    pixels =
+      (shape: (4, 4))
+      [[0. 0. 0. 0.]
+       [0. 0. 0. 0.]
+       [0. 0. 0. 0.]
+       [0. 0. 0. 0.]]
+    attrs = {}
+
+    Or create a Pixels instance from another array (e.g. an image or matrix):
+
+    >>> import numpy as np
+    >>> matrix = np.ones((3, 3))
+    >>> pixels = kc.Pixels(matrix, xlim = [0, 10], ylim = [-5, 5])
+    >>> pixels
+    Pixels
+    ------
+    xlim = [ 0. 10.]
+    ylim = [-5.  5.]
+    pixels =
+      (shape: (3, 3))
+      [[1. 1. 1.]
+       [1. 1. 1.]
+       [1. 1. 1.]]
+    attrs = {}
+
+    Access pixels' properties directly:
+
+    >>> pixels.xlim             # ndarray[xmin, xmax]
+    >>> pixels.ylim             # ndarray[ymin, ymax]
+    >>> pixels.pixel_size       # ndarray[xsize, ysize]
+    >>> pixels.pixels.shape     # pixels resolution - tuple[nx, ny]
+
+    You can save extra attributes about the pixels instance in the `attrs`
+    dictionary:
+
+    >>> pixels.attrs["dpi"] = 300
+    >>> pixels
+    Pixels
+    ------
+    xlim = [ 0. 10.]
+    ylim = [-5.  5.]
+    pixels =
+      (shape: (3, 3))
+      [[1. 1. 1.]
+       [1. 1. 1.]
+       [1. 1. 1.]]
+    attrs = {
+      'dpi': 300
+    }
+
+    The lower left and upper right corners of the pixel grid, in physical
+    coordinates (the ones given by xlim and ylim):
+
+    >>> pixels.lower
+    array([ 0., -5.])
+
+    >>> pixels.upper
+    array([10.,  5.])
+
+    You can access the underlying NumPy array directly:
+
+    >>> pixels.pixels
+    array([[1., 1., 1.],
+           [1., 1., 1.],
+           [1., 1., 1.]])
+
+    Indexing is forwarded to the NumPy array:
+
+    >>> pixels[:, :]
+    array([[1., 1., 1.],
+           [1., 1., 1.],
+           [1., 1., 1.]])
+
+    Transform physical units into pixel indices:
+
+    >>> pixels.from_physical([5, 0])                    # pixel centres
+    array([1., 1.])
+
+    >>> pixels.from_physical([5, 0], corner = True)     # lower left corners
+    array([1.5, 1.5])
+
+    Transform pixel indices into physical units:
+
+    >>> pixels.to_physical([0, 0])                      # pixels centres
+    array([ 1.66666667, -3.33333333])
+
+    >>> pixels.to_physical([0, 0], corner = True)       # lower left corners
+    array([ 0., -5.])
+
+    Save Pixels instance to disk, as a binary archive:
+
+    >>> pixels.save("pixels.pickle")
+    >>> pixels = kc.load("pixels.pickle")
+
+    Create deep copy of a Pixels instance:
+
+    >>> Pixels.copy()
+
+    Matplotlib plotting (optional, if Matplotlib is installed):
+
+    >>> fig, ax = pixels.plot()
+    >>> fig.show()
+
+    Plotly trace (optional, if Plotly is installed):
+
+    >>> import plotly.graph_objs as go
+    >>> fig = go.Figure()
+    >>> fig.add_trace(pixels.heatmap_trace())
+    >>> fig.show()
 
     See Also
     --------
@@ -159,7 +276,7 @@ class Pixels:
         self._pixels = pixels_array
         self._xlim = xlim
         self._ylim = ylim
-        self._attrs = kwargs
+        self._attrs = dict(kwargs)
 
 
     @property
@@ -537,6 +654,10 @@ class Pixels:
         ax.set_ylabel("y (mm)")
 
         return fig, ax
+
+
+    def __getitem__(self, *args, **kwargs):
+        return self.pixels.__getitem__(*args, **kwargs)
 
 
     def __repr__(self):

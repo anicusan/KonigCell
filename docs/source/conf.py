@@ -90,7 +90,8 @@ numpydoc_xref_param_type = True
 numpydoc_xref_ignore = {'optional', 'type_without_description', 'BadException'}
 
 # Run docstring validation as part of build process
-numpydoc_validation_checks = {"all", "GL01", "SA04", "RT03"}
+numpydoc_validation_checks = {"all", "SS06", "PR01", "GL01", "SA01", "EX01",
+                              "YD01", "ES01", "GL08", "SS01", "RT01"}
 
 autodoc_default_options = {
     'show-inheritance': False,

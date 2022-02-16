@@ -75,10 +75,6 @@ class Voxels:
     attrs: dict[Any, Any]
         A dictionary storing any other user-defined information.
 
-    Examples
-    --------
-    TODO
-
     See Also
     --------
     konigcell.Pixels : a class managing a physical 2D pixel space.
@@ -169,7 +165,7 @@ class Voxels:
         self._xlim = xlim
         self._ylim = ylim
         self._zlim = zlim
-        self._attrs = kwargs
+        self._attrs = dict(kwargs)
 
 
     @property
@@ -1015,6 +1011,10 @@ class Voxels:
 
         # You need to install Plotly to use this function!
         return go.Heatmap(heatmap)
+
+
+    def __getitem__(self, *args, **kwargs):
+        return self.pixels.__getitem__(*args, **kwargs)
 
 
     def __repr__(self):

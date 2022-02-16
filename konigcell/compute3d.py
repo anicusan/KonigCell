@@ -527,7 +527,9 @@ def dynamic_prob3d(
     )
 
     nonzero = (igrid.voxels != 0.)
-    voxels.voxels[nonzero] /= igrid.voxels[nonzero]
+
+    if nonzero.any():
+        voxels.voxels[nonzero] /= igrid.voxels[nonzero]
 
     # Correction for floating-point errors: threshold all voxels with values
     # below min(values); they can only exist due to FP errors
@@ -609,7 +611,9 @@ def static_prob3d(
     )
 
     nonzero = (igrid.voxels != 0.)
-    voxels.voxels[nonzero] /= igrid.voxels[nonzero]
+
+    if nonzero.any():
+        voxels.voxels[nonzero] /= igrid.voxels[nonzero]
 
     # Correction for floating-point errors: threshold all voxels with values
     # below min(values); they can only exist due to FP errors

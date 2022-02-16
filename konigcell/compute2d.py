@@ -100,14 +100,14 @@ def dynamic2d(
 
     Parameters
     ----------
-    positions: (N, 2) np.ndarray[ndim=2, dtype=float64]
+    positions : (N, 2) np.ndarray[ndim=2, dtype=float64]
         The 2D particle positions. Separate multiple trajectories with a row of
         NaN.
 
-    mode: kc.RATIO, kc.INTERSECTION, kc.PARTICLE, kc.ONE
+    mode : kc.RATIO, kc.INTERSECTION, kc.PARTICLE, kc.ONE
         The rasterization mode, see above for full details.
 
-    values: float, (N-1,) np.ndarray, optional
+    values : float, (N-1,) np.ndarray, optional
         The particle values to rasterize, will be multiplied with what the mode
         returns; if a single `float`, all values are set to it. Multiple values
         can be given in a NumPy array for each particle movement, so it needs
@@ -115,51 +115,128 @@ def dynamic2d(
         there are only movements AB then BC). If unset (default), it is
         considered 1.
 
-    radii: float, (N,) np.ndarray, optional
+    radii : float, (N,) np.ndarray, optional
         Each particle's radius; if a single number, all particles are will have
         this radius. Multiple radii can be given in a NumPy array for each
         particle position. If `None` (default), the particle is considered
         point-like / infinitesimally small.
 
-    pixels: konigcell.Pixels, optional
+    pixels : kc.Pixels, optional
         A pre-created pixel grid to use; if unset, a new one will be created -
-        so `resolution` must be set!
+        so `resolution` must be set.
 
-    resolution: 2-tuple, optional
+    resolution : 2-tuple, optional
         If `pixels` is unset, a new pixel grid will be created; this resolution
         contains the number of pixels in the X and Y dimensions, e.g.
         ``(512, 512)``. There must be at least 2 pixels in each dimension.
 
-    xlim: 2-tuple, optional
+    xlim : 2-tuple, optional
         If `pixels` is unset, a new pixel grid will be created; you can
         manually set the physical rectangle spanned by this new grid as
         `[xmin, xmax]`. If unset, it is automatically computed to contain all
         particle positions.
 
-    ylim: 2-tuple, optional
+    ylim : 2-tuple, optional
         Same as for `xlim`.
 
-    executor: concurrent.futures.Executor subclass or instance
+    executor : concurrent.futures.Executor subclass or instance
         The parallel executor to use, implementing the `Executor` interface.
         For distributed computation with MPI, use `MPIPoolExecutor` from
         `mpi4py`. The default is `ThreadPoolExecutor`, which has the lowest
         overhead - useful because the main computation is done by C code
         releasing the GIL.
 
-    max_workers: int, optional
+    max_workers : int, optional
         The maximum number of workers (threads, processes or ranks) to use by
         the parallel executor; if 1, it is sequential (and produces the
         clearest error messages should they happen). If unset, the
         `os.cpu_count()` is used.
 
-    verbose: bool or str default True
+    verbose : bool or str default True
         If `True`, time the computation and print the state of the execution.
         If `str`, show a message before loading bars.
 
     Examples
     --------
-    TODO
+    Compute the occupancy grid of a 2D particle of radius 0.5 moving between 3
+    positions:
 
+    >>> import numpy as np
+    >>> positions = np.array([[0, 0], [1, 1], [2, 1]])
+    >>>
+    >>> import konigcell as kc
+    >>> pixels = kc.dynamic2d(
+    >>>     positions,
+    >>>     kc.INTERSECTION,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>>     xlim = [-2, 5],
+    >>>     ylim = [-2, 5],
+    >>> )
+
+    The ``kc.INTERSECTION`` pixellisation mode adds the area shaded by the
+    particle's movement onto the grid.
+
+    For a residence time distribution, compute the time difference between the
+    particle's timestamps:
+
+    >>> times = np.array([0, 2, 3])
+    >>> dt = np.diff(times)
+    >>> pixels = kc.dynamic2d(
+    >>>     positions,
+    >>>     kc.RATIO,
+    >>>     values = dt,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>> )
+
+    The ``kc.RATIO`` pixellisation mode splits a given value (in this
+    case the time difference) across a particle's trajectory proportionally to
+    the shaded area.
+
+    If you omit ``xlim`` and ``ylim``, they will be computed automatically to
+    include all particle positions.
+
+    You can reuse the same pixels grid for multiple pixellisations:
+
+    >>> kc.dynamic2d(
+    >>>     positions,
+    >>>     kc.INTERSECTION,
+    >>>     radii = 0.5,
+    >>>     pixels = pixels,
+    >>> )
+
+    In this case the ``resolution``, ``xlim`` and ``ylim`` don't need to be set
+    anymore; they are extracted from the Pixels grid.
+
+    You can set the maximum number of workers for the parallel pixellisation;
+    e.g. for single-threaded execution:
+
+    >>> pixels = kc.dynamic2d(
+    >>>     positions,
+    >>>     kc.ONE,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>>     max_workers = 1,
+    >>> )
+
+    The ``kc.ONE`` pixellisation flag simply adds 1 to each pixel intersected
+    by the moving particle.
+
+    Finally, here is a complete example computing the residence time
+    distribution of a 2D particle moving randomly in a box of length 5:
+
+    >>> positions = np.random.random((10_000, 2)) * 5
+    >>> times = np.linspace(0, 100, 10_000)
+    >>> dt = np.diff(times)
+    >>>
+    >>> rtd = kc.dynamic2d(
+    >>>     positions,
+    >>>     kc.RATIO,
+    >>>     values = dt,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>> )
     '''
     # Time pixellisation
     if verbose and not isinstance(verbose, str):
@@ -323,8 +400,64 @@ def static2d(
 
     Examples
     --------
-    TODO
+    Compute the occupancy grid of a 3 static 2D particles of radius 0.5:
 
+    >>> import numpy as np
+    >>> positions = np.array([[0, 0], [1, 1], [2, 1]])
+    >>>
+    >>> import konigcell as kc
+    >>> pixels = kc.static2d(
+    >>>     positions,
+    >>>     kc.INTERSECTION,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>>     xlim = [-2, 5],
+    >>>     ylim = [-2, 5],
+    >>> )
+
+    The ``kc.INTERSECTION`` pixellisation mode adds the area shaded by the
+    particle's movement onto the grid.
+
+    If you omit ``xlim`` and ``ylim``, they will be computed automatically to
+    include all particle positions.
+
+    You can reuse the same pixels grid for multiple pixellisations:
+
+    >>> kc.static2d(
+    >>>     positions,
+    >>>     kc.INTERSECTION,
+    >>>     radii = 0.5,
+    >>>     pixels = pixels,
+    >>> )
+
+    In this case the ``resolution``, ``xlim`` and ``ylim`` don't need to be set
+    anymore; they are extracted from the Pixels grid.
+
+    You can set the maximum number of workers for the parallel pixellisation;
+    e.g. for single-threaded execution:
+
+    >>> pixels = kc.static2d(
+    >>>     positions,
+    >>>     kc.ONE,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>>     max_workers = 1,
+    >>> )
+
+    The ``kc.ONE`` pixellisation flag simply adds 1 to each pixel intersected
+    by the moving particle.
+
+    Finally, here is a complete example computing the occupancy grid of 10,000
+    static 2D particles:
+
+    >>> positions = np.random.random((10_000, 2)) * 5
+    >>>
+    >>> occupancy = kc.static2d(
+    >>>     positions,
+    >>>     kc.INTERSECTION,
+    >>>     radii = 0.5,
+    >>>     resolution = (500, 500),
+    >>> )
     '''
 
     # Time pixellisation
@@ -467,11 +600,6 @@ def dynamic_prob2d(
 
     All input parameters are equivalent to `dynamic2d` - check its
     documentation for full details.
-
-    Examples
-    --------
-    TODO
-
     '''
 
     # Time pixellising
@@ -509,7 +637,9 @@ def dynamic_prob2d(
     )
 
     nonzero = (igrid.pixels != 0.)
-    pixels.pixels[nonzero] /= igrid.pixels[nonzero]
+
+    if nonzero.any():
+        pixels.pixels[nonzero] /= igrid.pixels[nonzero]
 
     # Correction for floating-point errors: threshold all pixels with values
     # below min(values); they can only exist due to FP errors
@@ -547,11 +677,6 @@ def static_prob2d(
 
     All input parameters are equivalent to `dynamic2d` - check its
     documentation for full details.
-
-    Examples
-    --------
-    TODO
-
     '''
 
     # Time pixellising
@@ -589,7 +714,9 @@ def static_prob2d(
     )
 
     nonzero = (igrid.pixels != 0.)
-    pixels.pixels[nonzero] /= igrid.pixels[nonzero]
+
+    if nonzero.any():
+        pixels.pixels[nonzero] /= igrid.pixels[nonzero]
 
     # Correction for floating-point errors: threshold all pixels with values
     # below min(values); they can only exist due to FP errors

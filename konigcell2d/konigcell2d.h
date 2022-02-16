@@ -86,7 +86,7 @@ extern "C" {
  * KC2D_SINGLE_PRECISION : if defined, single-precision floats will be used for calculations.
  */
 #define KC2D_NUM_VERTS 32
-#define KC2D_MAX_VERTS 42
+#define KC2D_MAX_VERTS 50
 // #define KC2D_SINGLE_PRECISION
 
 

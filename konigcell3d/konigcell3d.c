@@ -191,7 +191,7 @@ kc3d_real       kc3d_sphere(kc3d_poly *poly,
  * Approximate a 3D spherical cylinder (i.e. the convex hull of two oriented spherical halves)
  * between two points `p1` and `p2` with `KC3D_SC_NUM_VERTS` vertices *without the the second
  * spherical cap's volume*. The input `poly` must be pre-allocated; it will be initialised by this
- * function. Returns the analytical full spherical cylinder's volume.
+ * function. Returns the analytical volume.
  */
 kc3d_real        kc3d_half_cylinder(kc3d_poly *poly, const kc3d_rvec3 p1, const kc3d_rvec3 p2,
                                     const kc3d_real r1, const kc3d_real r2)
@@ -291,7 +291,7 @@ kc3d_real        kc3d_half_cylinder(kc3d_poly *poly, const kc3d_rvec3 p1, const 
     kc3d_init_poly_tri(poly, vertices, KC3D_SC_NUM_VERTS,
                              faceinds, KC3D_SC_NUM_FACES);
 
-    return 4. / 6. * KC3D_PI * (r1 * r1 * r1 + r2 * r2 * r2) +                  // Spherical caps
+    return 4. / 6. * KC3D_PI * (r1 * r1 * r1 - r2 * r2 * r2) +                  // Spherical caps
            KC3D_PI / 3 * kc3d_dist(p1, p2) * (r1 * r1 + r1 * r2 + r2 * r2);     // Cylinder / cone
 }
 
@@ -484,10 +484,76 @@ void            kc3d_rasterize_ll(kc3d_poly* KC3D_RESTRICT  poly,
                         grid[KC3D_GIDX] += factor;
     }
 
+#undef KC3D_GIDX
+#undef KC3D_LIDX
+
     // Reinitialise the written local grid to zero
     for (i = 0; i < lx * ly * lz; ++i)
         lgrid[i] = 0.;
 }
+
+
+/* Check if the particle position at index `ip` is valid. */
+kc3d_int        kc3d_valid_position(const kc3d_particles *particles, const kc3d_int ip)
+{
+    // Extract attributes needed
+    kc3d_real   x = particles->positions[3 * ip];
+    kc3d_real   y = particles->positions[3 * ip + 1];
+    kc3d_real   z = particles->positions[3 * ip + 2];
+    kc3d_real   r = (particles->radii == NULL ? 1e-6 : particles->radii[ip]);
+    kc3d_real   f = (particles->factors == NULL ? 1. : particles->factors[ip]);
+
+    return !(isnan(x) || isnan(y) || isnan(z) || isnan(r) || isnan(f));
+}
+
+
+/* Find next valid trajectory's starting index, after `start`. */
+kc3d_int        kc3d_next_segment_start(const kc3d_particles    *particles,
+                                        const kc3d_int          start)
+{
+    kc3d_int    ip = start;
+
+    while (ip < particles->num_particles)
+    {
+        // Segments must have at least two valid positions
+        if (ip < particles->num_particles - 1 && kc3d_valid_position(particles, ip) &&
+                kc3d_valid_position(particles, ip + 1))
+            break;
+        ++ip;
+    }
+
+    return ip;
+}
+
+/**
+ * Find the start (inclusive) and end (exclusive) indices of the next trajectory segment after
+ * `start`; save indices in `segment_bounds`. A trajectory segment is separated by NaNs. If no
+ * valid segment exists, return 0; otherwise return the starting index of the *next* segment.
+ */
+kc3d_int        kc3d_next_segment(kc3d_int              *segment_bounds,
+                                  const kc3d_particles  *particles,
+                                  const kc3d_int        start)
+{
+    kc3d_int    ip;
+
+    // Find starting index (inclusive)
+    ip = kc3d_next_segment_start(particles, start);
+    if (ip >= particles->num_particles)
+        return 0;
+
+    segment_bounds[0] = ip;
+
+    // Find ending index (exclusive)
+    ip = segment_bounds[0] + 2;         // Already checked next one is valid too
+    while (ip < particles->num_particles && kc3d_valid_position(particles, ip))
+        ++ip;
+
+    segment_bounds[1] = ip;
+
+    // Find next segment's start
+    return kc3d_next_segment_start(particles, ip);
+}
+
 
 
 /**
@@ -513,16 +579,20 @@ void            kc3d_dynamic(kc3d_voxels            *voxels,
     }
 
     // Extract members from `voxels` and `particles`
-    kc3d_real        *grid = voxels->grid;
-    const kc3d_int   *dims = voxels->dims;
-    const kc3d_real  *xlim = voxels->xlim;
-    const kc3d_real  *ylim = voxels->ylim;
-    const kc3d_real  *zlim = voxels->zlim;
+    kc3d_real       *grid = voxels->grid;
+    const kc3d_int  *dims = voxels->dims;
+    const kc3d_real *xlim = voxels->xlim;
+    const kc3d_real *ylim = voxels->ylim;
+    const kc3d_real *zlim = voxels->zlim;
 
-    const kc3d_real  *positions = particles->positions;
-    const kc3d_real  *radii = particles->radii;
-    const kc3d_real  *factors = particles->factors;
-    const kc3d_int   num_particles = particles->num_particles;
+    const kc3d_real *positions = particles->positions;
+    const kc3d_real *radii = particles->radii;
+    const kc3d_real *factors = particles->factors;
+    const kc3d_int  num_particles = particles->num_particles;
+
+    // Current trajectory segment bounds indices: start (inclusive), end (exclusive)
+    kc3d_int        segment_bounds[2];
+    kc3d_int        next = 0;
 
     // Auxilliaries
     kc3d_int        ip;             // Trajectory particle index
@@ -556,51 +626,33 @@ void            kc3d_dynamic(kc3d_voxels            *voxels,
         trajectory[ip].z = positions[3 * ip + 2] - zlim[0];
     }
 
-    // Rasterize particle trajectories: create a polygonal approximation of the convex hull of the
-    // two particle locations, minus the second circle's area (was added in the previous iteration)
-    for (ip = 0; ip < num_particles - 2; ++ip)
+    // Rasterize particle trajectory segments: for each segment, across each two consecutive
+    // particle positions, create a polygonal approximation of the convex hull of the two particle
+    // locations, minus the second sphere's area (which is added in the previous iteration)
+    //
+    // Find the next trajectory segment's index bounds and return the future one's start index
+    while ((next = kc3d_next_segment(segment_bounds, particles, next)))
     {
-        // Skip NaNs - useful for jumping over different trajectories
-        if (isnan(trajectory[ip].x) || isnan(trajectory[ip + 1].x) ||
-            isnan(trajectory[ip].y) || isnan(trajectory[ip + 1].y) ||
-            isnan(trajectory[ip].z) || isnan(trajectory[ip + 1].z))
-            continue;
-
-        r1 = (radii == NULL ? rsmall : radii[ip]);
-        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
-
-        if (isnan(r1) || isnan(r2) || isnan(factor))
-            continue;
-
-        // If this is the last segment from a trajectory (i.e. next point is NaN), voxellise full
-        // cylinder
-        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y) ||
-                isnan(trajectory[ip + 2].z) ||
-                (radii != NULL && isnan(radii[ip + 2])) ||
-                (factors != NULL && isnan(factors[ip + 1])))
-            volume = kc3d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-        else
-            volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-
-        kc3d_rasterize_ll(&cylinder, volume, grid, lgrid, dims, grid_size, factor, mode);
-    }
-
-    // The last trajectory segment is voxellised as a full cylinder if not omit_last
-    if (!isnan(trajectory[ip].x) && !isnan(trajectory[ip + 1].x) &&
-        !isnan(trajectory[ip].y) && !isnan(trajectory[ip + 1].y) &&
-        !isnan(trajectory[ip].z) && !isnan(trajectory[ip + 1].z))
-    {
-        r1 = (radii == NULL ? rsmall : radii[ip]);
-        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
-
-        if (!isnan(r1) && !isnan(r2) && !isnan(factor))
+        for (ip = segment_bounds[0]; ip < segment_bounds[1] - 1; ++ip)
         {
-            if (omit_last)
-                volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-            else
+            r1 = (radii == NULL ? rsmall : radii[ip]);
+            r2 = (radii == NULL ? rsmall : radii[ip + 1]);
+            factor = (factors == NULL ? 1 : factors[ip]);
+
+            // If this is the last cylinder from a segment, pixellise full cylinder, including
+            // spherical cap - unless it's the last segment and omit_last
+            if (ip == segment_bounds[1] - 2 && !(next >= num_particles - 1 && omit_last))
+            {
                 volume = kc3d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+
+                // Account for extra area in the trajectory end; this introduces a small error...
+                if (mode == kc3d_ratio)
+                    factor *= volume / (volume - 4. / 3. * KC3D_PI * r2 * r2 * r2);
+                if (mode == kc3d_particle)
+                    factor *= (volume - 4. / 3. * KC3D_PI * r2 * r2 * r2) / volume;
+            }
+            else
+                volume = kc3d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
 
             kc3d_rasterize_ll(&cylinder, volume, grid, lgrid, dims, grid_size, factor, mode);
         }

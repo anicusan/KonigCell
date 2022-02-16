@@ -222,8 +222,7 @@ kc2d_real       kc2d_circle(kc2d_poly *poly,
 /**
  * Approximate a 2D cylinder (i.e. the convex hull of two circles) between two points `p1` and `p2`
  * with `KC2D_NUM_VERTS` vertices *without the the second circle's area*. The input `poly` must be
- * pre-allocated; it will be initialised by this function. Returns the analytical full cylinder's
- * area.
+ * pre-allocated; it will be initialised by this function. Returns the analytical area.
  */
 kc2d_real       kc2d_half_cylinder(kc2d_poly *poly,
                                    const kc2d_rvec2 p1,
@@ -262,7 +261,7 @@ kc2d_real       kc2d_half_cylinder(kc2d_poly *poly,
         verts[i + NUM_VERTS_2].pos.y = p2.y + KC2D_SIN(end_ang + i * inc) * r2;
     }
 
-    return kc2d_dist(p1.x, p1.y, p2.x, p2.y) * (r1 + r2) / 2 + KC2D_PI / 2 * (r1 * r1 + r2 * r2);
+    return kc2d_dist(p1.x, p1.y, p2.x, p2.y) * (r1 + r2) + KC2D_PI / 2 * (r1 * r1 - r2 * r2);
 }
 
 
@@ -311,7 +310,7 @@ kc2d_real       kc2d_cylinder(kc2d_poly *poly,
         verts[i + NUM_VERTS_2].pos.y = p2.y + KC2D_SIN(start_ang + i * inc) * r2;
     }
 
-    return kc2d_dist(p1.x, p1.y, p2.x, p2.y) * (r1 + r2) / 2 + KC2D_PI / 2 * (r1 * r1 + r2 * r2);
+    return kc2d_dist(p1.x, p1.y, p2.x, p2.y) * (r1 + r2) + KC2D_PI / 2 * (r1 * r1 + r2 * r2);
 }
 
 
@@ -345,22 +344,25 @@ void            kc2d_rasterize_ll(kc2d_poly* KC2D_RESTRICT  poly,
     lx = ibox[1].i - ibox[0].i;
     ly = ibox[1].j - ibox[0].j;
 
-    // Rasterize the polygon onto the local grid and compute the total area occupied by `poly`
+    // Rasterize the polygon onto the local grid
     kc2d_rasterize_local(poly, ibox, lgrid, grid_size);
+
+#define KC2D_GIDX (i * dims[1] + j)                             /* Global grid index */
+#define KC2D_LIDX ((i - ibox[0].i) * ly + (j - ibox[0].j))      /* Local  grid index */
 
     // Add values from the local grid to the global one, depending on the pixellisation `mode`
     if (mode == kc2d_ratio)
     {
         for (i = ibox[0].i; i < ibox[1].i; ++i)
             for (j = ibox[0].j; j < ibox[1].j; ++j)
-                grid[i * dims[1] + j] += factor * lgrid[(i - ibox[0].i) * ly + j - ibox[0].j] / area;
+                grid[KC2D_GIDX] += factor * lgrid[KC2D_LIDX] / area;
     }
 
     else if (mode == kc2d_intersection)
     {
         for (i = ibox[0].i; i < ibox[1].i; ++i)
             for (j = ibox[0].j; j < ibox[1].j; ++j)
-                grid[i * dims[1] + j] += factor * lgrid[(i - ibox[0].i) * ly + j - ibox[0].j];
+                grid[KC2D_GIDX] += factor * lgrid[KC2D_LIDX];
     }
 
     else if (mode == kc2d_particle)
@@ -368,7 +370,7 @@ void            kc2d_rasterize_ll(kc2d_poly* KC2D_RESTRICT  poly,
         for (i = ibox[0].i; i < ibox[1].i; ++i)
             for (j = ibox[0].j; j < ibox[1].j; ++j)
                 if (lgrid[(i - ibox[0].i) * ly + j - ibox[0].j] != 0.)
-                    grid[i * dims[1] + j] += factor * area;
+                    grid[KC2D_GIDX] += factor * area;
     }
 
     else if (mode == kc2d_one)
@@ -376,12 +378,76 @@ void            kc2d_rasterize_ll(kc2d_poly* KC2D_RESTRICT  poly,
         for (i = ibox[0].i; i < ibox[1].i; ++i)
             for (j = ibox[0].j; j < ibox[1].j; ++j)
                 if (lgrid[(i - ibox[0].i) * ly + j - ibox[0].j] != 0.)
-                    grid[i * dims[1] + j] += factor;
+                    grid[KC2D_GIDX] += factor;
     }
+
+#undef KC2D_GIDX
+#undef KC2D_LIDX
 
     // Reinitialise the written local grid to zero
     for (i = 0; i < lx * ly; ++i)
         lgrid[i] = 0.;
+}
+
+
+/* Check if the particle position at index `ip` is valid. */
+kc2d_int        kc2d_valid_position(const kc2d_particles *particles, const kc2d_int ip)
+{
+    // Extract attributes needed
+    kc2d_real   x = particles->positions[2 * ip];
+    kc2d_real   y = particles->positions[2 * ip + 1];
+    kc2d_real   r = (particles->radii == NULL ? 1e-6 : particles->radii[ip]);
+    kc2d_real   f = (particles->factors == NULL ? 1. : particles->factors[ip]);
+
+    return !(isnan(x) || isnan(y) || isnan(r) || isnan(f));
+}
+
+
+/* Find next valid trajectory's starting index, after `start`. */
+kc2d_int        kc2d_next_segment_start(const kc2d_particles    *particles,
+                                        const kc2d_int          start)
+{
+    kc2d_int    ip = start;
+
+    while (ip < particles->num_particles)
+    {
+        // Segments must have at least two valid positions
+        if (ip < particles->num_particles - 1 && kc2d_valid_position(particles, ip) &&
+                kc2d_valid_position(particles, ip + 1))
+            break;
+        ++ip;
+    }
+
+    return ip;
+}
+
+/**
+ * Find the start (inclusive) and end (exclusive) indices of the next trajectory segment after
+ * `start`; save indices in `segment_bounds`. A trajectory segment is separated by NaNs. If no
+ * valid segment exists, return 0; otherwise return the starting index of the *next* segment.
+ */
+kc2d_int        kc2d_next_segment(kc2d_int              *segment_bounds,
+                                  const kc2d_particles  *particles,
+                                  const kc2d_int        start)
+{
+    kc2d_int    ip;
+
+    // Find starting index (inclusive)
+    ip = kc2d_next_segment_start(particles, start);
+    if (ip >= particles->num_particles)
+        return 0;
+
+    segment_bounds[0] = ip;
+
+    // Find ending index (exclusive)
+    ip = segment_bounds[0] + 2;         // Already checked next one is valid too
+    while (ip < particles->num_particles && kc2d_valid_position(particles, ip))
+        ++ip;
+
+    segment_bounds[1] = ip;
+
+    // Find next segment's start
+    return kc2d_next_segment_start(particles, ip);
 }
 
 
@@ -417,6 +483,10 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
     const kc2d_real  *factors = particles->factors;
     const kc2d_int   num_particles = particles->num_particles;
 
+    // Current trajectory segment bounds indices: start (inclusive), end (exclusive)
+    kc2d_int        segment_bounds[2];
+    kc2d_int        next = 0;
+
     // Auxilliaries
     kc2d_int        ip;             // Trajectory particle index
     kc2d_real       r1, r2;         // Radii for two particle
@@ -445,53 +515,38 @@ void            kc2d_dynamic(kc2d_pixels            *pixels,
         trajectory[ip].y = positions[2 * ip + 1] - ylim[0];
     }
 
-    // Rasterize particle trajectories: create a polygonal approximation of the convex hull of the
-    // two particle locations, minus the second circle's area (was added in the previous iteration)
-    for (ip = 0; ip < num_particles - 2; ++ip)
+    // Rasterize particle trajectory segments: for each segment, across each two consecutive
+    // particle positions, create a polygonal approximation of the convex hull of the two particle
+    // locations, minus the second circle's area (which is added in the previous iteration)
+    //
+    // Find the next trajectory segment's index bounds and return the future one's start index
+    while ((next = kc2d_next_segment(segment_bounds, particles, next)))
     {
-        // Skip NaNs - useful for jumping over different trajectories
-        if (isnan(trajectory[ip].x) || isnan(trajectory[ip + 1].x) ||
-            isnan(trajectory[ip].y) || isnan(trajectory[ip + 1].y))
-            continue;
-
-        r1 = (radii == NULL ? rsmall : radii[ip]);
-        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
-
-        if (isnan(r1) || isnan(r2) || isnan(factor))
-            continue;
-
-        // If this is the last segment from a trajectory (i.e. next point is NaN), pixellise full
-        // cylinder
-        if (isnan(trajectory[ip + 2].x) || isnan(trajectory[ip + 2].y) ||
-            (radii != NULL && isnan(radii[ip + 2])) ||
-            (factors != NULL && isnan(factors[ip + 1])))
-            area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-        else
-            area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-
-        kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
-    }
-
-    // The last trajectory segment is pixellised as a full cylinder if not omit_last
-    if (!isnan(trajectory[ip].x) && !isnan(trajectory[ip + 1].x) &&
-        !isnan(trajectory[ip].y) && !isnan(trajectory[ip + 1].y))
-    {
-        r1 = (radii == NULL ? rsmall : radii[ip]);
-        r2 = (radii == NULL ? rsmall : radii[ip + 1]);
-        factor = (factors == NULL ? 1 : factors[ip]);
-
-        if (!isnan(r1) && !isnan(r2) && !isnan(factor))
+        for (ip = segment_bounds[0]; ip < segment_bounds[1] - 1; ++ip)
         {
-            if (omit_last)
-                area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
-            else
+            r1 = (radii == NULL ? rsmall : radii[ip]);
+            r2 = (radii == NULL ? rsmall : radii[ip + 1]);
+            factor = (factors == NULL ? 1 : factors[ip]);
+
+            // If this is the last cylinder from a segment, pixellise full cylinder, including
+            // circular cap - unless it's the last segment and omit_last
+            if (ip == segment_bounds[1] - 2 && !(next >= num_particles - 1 && omit_last))
+            {
                 area = kc2d_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
+
+                // Account for extra area in the trajectory end; this introduces a small error...
+                if (mode == kc2d_ratio)
+                    factor *= area / (area - KC2D_PI * r2 * r2);
+                if (mode == kc2d_particle)
+                    factor *= (area - KC2D_PI * r2 * r2) / area;
+            }
+            else
+                area = kc2d_half_cylinder(&cylinder, trajectory[ip], trajectory[ip + 1], r1, r2);
 
             kc2d_rasterize_ll(&cylinder, area, grid, lgrid, dims, grid_size, factor, mode);
         }
     }
-
+    
     KC2D_FREE(lgrid);
     KC2D_FREE(trajectory);
 }
