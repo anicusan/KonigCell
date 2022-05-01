@@ -101,14 +101,14 @@ def dynamic3d(
 
     Parameters
     ----------
-    positions: (N, 3) np.ndarray[ndim=2, dtype=float64]
+    positions : (N, 3) np.ndarray[ndim=2, dtype=float64]
         The 3D particle positions. Separate multiple trajectories with a row of
         NaN.
 
-    mode: kc.RATIO, kc.INTERSECTION, kc.PARTICLE, kc.ONE
+    mode : kc.RATIO, kc.INTERSECTION, kc.PARTICLE, kc.ONE
         The rasterization mode, see above for full details.
 
-    values: float, (N-1,) np.ndarray, optional
+    values : float, (N-1,) np.ndarray, optional
         The particle values to rasterize, will be multiplied with what the mode
         returns; if a single `float`, all values are set to it. Multiple values
         can be given in a NumPy array for each particle movement, so it needs
@@ -116,54 +116,53 @@ def dynamic3d(
         there are only movements AB then BC). If unset (default), it is
         considered 1.
 
-    radii: float, (N,) np.ndarray, optional
+    radii : float, (N,) np.ndarray, optional
         Each particle's radius; if a single number, all particles are will have
         this radius. Multiple radii can be given in a NumPy array for each
         particle position. If `None` (default), the particle is considered
         point-like / infinitesimally small.
 
-    voxels: konigcell.Voxels, optional
+    voxels : konigcell.Voxels, optional
         A pre-created voxel grid to use; if unset, a new one will be created -
-        so `resolution` must be set!
+        so `resolution` must be set.
 
-    resolution: 3-tuple, optional
+    resolution : 3-tuple, optional
         If `voxels` is unset, a new voxel grid will be created; this resolution
         contains the number of voxels in the X, Y and Z dimensions, e.g.
         ``(50, 50, 50)``. There must be at least 2 voxels in each dimension.
 
-    xlim: 2-tuple, optional
+    xlim : 2-tuple, optional
         If `voxels` is unset, a new voxel grid will be created; you can
         manually set the physical rectangle spanned by this new grid as
         `[xmin, xmax]`. If unset, it is automatically computed to contain all
         particle positions.
 
-    ylim: 2-tuple, optional
+    ylim : 2-tuple, optional
         Same as for `xlim`.
 
-    zlim: 2-tuple, optional
+    zlim : 2-tuple, optional
         Same as for `xlim`.
 
-    executor: concurrent.futures.Executor subclass or instance
+    executor : concurrent.futures.Executor subclass or instance
         The parallel executor to use, implementing the `Executor` interface.
         For distributed computation with MPI, use `MPIPoolExecutor` from
         `mpi4py`. The default is `ThreadPoolExecutor`, which has the lowest
         overhead - useful because the main computation is done by C code
         releasing the GIL.
 
-    max_workers: int, optional
+    max_workers : int, optional
         The maximum number of workers (threads, processes or ranks) to use by
         the parallel executor; if 1, it is sequential (and produces the
         clearest error messages should they happen). If unset, the
         `os.cpu_count()` is used.
 
-    verbose: bool or str default True
+    verbose : bool or str default True
         If `True`, time the computation and print the state of the execution.
         If `str`, show a message before loading bars.
 
     Examples
     --------
     TODO
-
     '''
 
     # Time voxellisation
@@ -335,7 +334,6 @@ def static3d(
     Examples
     --------
     TODO
-
     '''
 
     # Time voxellisation
@@ -488,7 +486,6 @@ def dynamic_prob3d(
     Examples
     --------
     TODO
-
     '''
 
     # Time voxellising
@@ -572,7 +569,6 @@ def static_prob3d(
     Examples
     --------
     TODO
-
     '''
 
     # Time voxellising

@@ -30,9 +30,15 @@ from    .mode           import  RATIO, INTERSECTION, PARTICLE, ONE
 
 
 
-def format_fig(fig, size=15, font="Computer Modern", template="plotly_white"):
+def format_fig(
+    fig,
+    size = 15,
+    font = "Computer Modern",
+    template = "plotly_white",
+):
     '''Format a Plotly figure to a consistent theme for the Nature
-    Computational Science journal.'''
+    Computational Science journal.
+    '''
 
     # LaTeX font
     fig.update_layout(
@@ -50,9 +56,38 @@ def format_fig(fig, size=15, font="Computer Modern", template="plotly_white"):
     fig.update_layout(template = template)
 
 
+def create_fig(nrows = 1, ncols = 1, subplot_titles = [], **kwargs):
+    '''Return a ``plotly.graph_objs.Figure`` pre-formatted with equalised
+    axes and white theming.
+    '''
+
+    from plotly.subplots import make_subplots
+
+    subplot_titles = list(subplot_titles) + [""] * (
+        nrows * ncols - len(subplot_titles)
+    )
+    fig = make_subplots(
+        nrows,
+        ncols,
+        subplot_titles = subplot_titles,
+        **kwargs,
+    )
+
+    for i in range(nrows):
+        for j in range(ncols):
+            index = i * ncols + j + 1
+            yaxis = f"yaxis{index}" if index != 1 else "yaxis"
+            xax = f"x{index}" if index != 1 else "x"
+
+            fig.layout[yaxis].update(scaleanchor = xax, scaleratio = 1)
+
+    format_fig(fig)
+    return fig
+
+
 
 
 __author__ = "Andrei Leonard Nicusan"
 __email__ = "a.l.nicusan@bham.ac.uk"
 __license__ = "MIT"
-__status__ = "Alpha"
+__status__ = "Beta"

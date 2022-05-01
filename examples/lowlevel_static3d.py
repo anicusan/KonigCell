@@ -53,7 +53,7 @@ end = time.time()
 print(f"Pixellised in {end - start} s.")
 
 # Compare pixellised area vs. analytical value
-volume_voxellised = float(voxels.sum())
+volume_voxellised = voxels.voxels.sum()
 volume_analytical = (4 / 3 * np.pi * radii ** 3).sum()
 error = 1 - volume_voxellised / volume_analytical
 

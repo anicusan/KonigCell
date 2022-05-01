@@ -56,7 +56,7 @@ end = time.time()
 print(f"Voxellised in {end - start} s.")
 
 # Compare pixellised area vs. analytical value
-volume_pixellised = float(voxels.sum())
+volume_pixellised = voxels.voxels.sum()
 volume_analytical = 0.5 * 4 / 3 * np.pi * radii[0] ** 3
 for i in range(num_particles - 1):
     distance = positions[i] - positions[i + 1]

@@ -38,48 +38,48 @@ class Voxels:
 
     Attributes
     ----------
-    voxels: (M, N, P) np.ndarray[ndim=3, dtype=float64]
+    voxels : (M, N, P) np.ndarray[ndim=3, dtype=float64]
         The 3D numpy array containing the voxel values. This class assumes a
         uniform grid of voxels - that is, the voxel size in each dimension is
         constant, but can vary from one dimension to another.
 
-    xlim: (2,) np.ndarray[ndim=1, dtype=float64]
+    xlim : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         x-dimension, formatted as [x_min, x_max].
 
-    ylim: (2,) np.ndarray[ndim=1, dtype=float64]
+    ylim : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         y-dimension, formatted as [y_min, y_max].
 
-    zlim: (2,) np.ndarray[ndim=1, dtype=float64]
+    zlim : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the voxellised volume in the
         z-dimension, formatted as [z_min, z_max].
 
-    voxel_size: (3,) np.ndarray[ndim=1, dtype=float64]
+    voxel_size : (3,) np.ndarray[ndim=1, dtype=float64]
         The lengths of a voxel in the x-, y- and z-dimensions, respectively.
 
-    voxel_grids: (3,) list[np.ndarray[ndim=1, dtype=float64]]
+    voxel_grids : (3,) list[np.ndarray[ndim=1, dtype=float64]]
         A list containing the voxel gridlines in the x-, y-, and z-dimensions.
         Each dimension's gridlines are stored as a numpy of the voxel
         delimitations, such that it has length (M + 1), where M is the number
         of voxels in given dimension.
 
-    lower: (3,) np.ndarray[ndim=1, dtype=float64]
+    lower : (3,) np.ndarray[ndim=1, dtype=float64]
         The lower left corner of the voxel box; corresponds to
         [xlim[0], ylim[0], zlim[0]].
 
-    upper: (3,) np.ndarray[ndim=1, dtype=float64]
+    upper : (3,) np.ndarray[ndim=1, dtype=float64]
         The upper right corner of the voxel box; corresponds to
         [xlim[1], ylim[1], zlim[1]].
 
-    attrs: dict[Any, Any]
+    attrs : dict[Any, Any]
         A dictionary storing any other user-defined information.
 
     See Also
     --------
-    konigcell.Pixels : a class managing a physical 2D pixel space.
-    konigcell.dynamic3d : rasterize moving particles' trajectories.
-    konigcell.static3d : rasterize static particles' positions.
+    konigcell.Pixels : A class managing a physical 2D pixel space.
+    konigcell.dynamic3d : Rasterize moving particles' trajectories.
+    konigcell.static3d : Rasterize static particles' positions.
     konigcell.dynamic_prob3d : 3D probability distribution of a quantity.
     '''
     __slots__ = ("_voxels", "_xlim", "_ylim", "_zlim", "_attrs", "_voxel_size",
@@ -90,22 +90,22 @@ class Voxels:
 
         Parameters
         ----------
-        voxels_array: 3D numpy.ndarray
+        voxels_array : 3D numpy.ndarray
             A 3D numpy array, corresponding to a pre-defined voxel space.
 
-        xlim: (2,) numpy.ndarray
+        xlim : (2,) numpy.ndarray
             The lower and upper boundaries of the voxellised volume in the
             x-dimension, formatted as [x_min, x_max].
 
-        ylim: (2,) numpy.ndarray
+        ylim : (2,) numpy.ndarray
             The lower and upper boundaries of the voxellised volume in the
             y-dimension, formatted as [y_min, y_max].
 
-        zlim: (2,) numpy.ndarray
+        zlim : (2,) numpy.ndarray
             The lower and upper boundaries of the voxellised volume in the
             z-dimension, formatted as [z_min, z_max].
 
-        kwargs: extra keyword arguments
+        **kwargs : extra keyword arguments
             Extra user-defined attributes to be saved in `.attrs`.
 
         Raises
@@ -113,7 +113,6 @@ class Voxels:
         ValueError
             If `voxels_array` does not have exactly 3 dimensions or if
             `xlim`, `ylim` or `zlim` do not have exactly 2 values each.
-
         '''
 
         # Type-checking inputs
@@ -269,7 +268,6 @@ class Voxels:
         >>> voxels.save("voxels.pickle")
 
         >>> voxels_reloaded = kc.Voxels.load("voxels.pickle")
-
         '''
         with open(filepath, "wb") as f:
             pickle.dump(self, f)
@@ -304,7 +302,6 @@ class Voxels:
         >>> voxels.save("voxels.pickle")
 
         >>> voxels_reloaded = kc.Voxels.load("voxels.pickle")
-
         '''
         with open(filepath, "rb") as f:
             obj = pickle.load(f)
@@ -337,6 +334,8 @@ class Voxels:
 
     @staticmethod
     def zeros(shape, xlim, ylim, zlim, **kwargs):
+        '''Create a Voxels object filled with zeros.
+        '''
         zero_voxels = np.zeros(shape, dtype = float)
         return Voxels(zero_voxels, xlim, ylim, zlim, **kwargs)
 
@@ -407,7 +406,6 @@ class Voxels:
         >>> voxels.from_physical([[0, 15, 0], [5, 20, 10]])
         array([[ 2. ,  2. , -0.5],
                [ 4.5,  4.5,  4.5]])
-
         '''
 
         offset = 0. if corner else self.voxel_size / 2
@@ -474,7 +472,6 @@ class Voxels:
         >>> voxels.to_physical([[0, 0, 0], [4, 4, 3]])
         array([[-4., 11.,  1.],
                [ 4., 19.,  7.]])
-
         '''
 
         offset = 0. if corner else self.voxel_size / 2
@@ -518,7 +515,8 @@ class Voxels:
 
         Returns
         -------
-        fig, ax : matplotlib figure and axes objects
+        fig, ax
+            Matplotlib figure and axes objects.
 
         Notes
         -----
@@ -538,7 +536,6 @@ class Voxels:
 
         >>> fig, ax = voxels.plot()
         >>> fig.show()
-
         '''
 
         if ax is None:
@@ -586,6 +583,29 @@ class Voxels:
         mode = "box",
         colorscale = "magma",
     ):
+        '''Create a volumetric PyVista plot - check the `mode` argument for
+        the available types.
+
+        Parameters
+        ----------
+        condition : function, default `lambda voxel_data: voxel_data > 0`
+            The filtering function applied to the voxel data before plotting
+            it. It should return a boolean mask (a numpy array of the same
+            shape, filled with True and False), selecting all voxels that
+            should be plotted. The default, `lambda x: x > 0` selects all
+            voxels which have a value larger than 0.
+
+        mode : "box", "plane", "slice"
+            Use a VTK clip box, clip plane or clip slice.
+
+        colorscale : str, default "magma"
+            The PyVista colorscale to use.
+
+        Returns
+        -------
+        pyvista.Plotter
+            A PyVista Figure object that can be ``.show()``.
+        '''
         # Type-checking inputs
         mode = str(mode).lower()
 
@@ -621,6 +641,22 @@ class Voxels:
         self,
         condition = lambda voxels: voxels != 0.,
     ):
+        '''Return a PyVista VTK object, exposing all VTK functionality.
+
+        Parameters
+        ----------
+        condition : function, default `lambda voxel_data: voxel_data > 0`
+            The filtering function applied to the voxel data before plotting
+            it. It should return a boolean mask (a numpy array of the same
+            shape, filled with True and False), selecting all voxels that
+            should be plotted. The default, `lambda x: x > 0` selects all
+            voxels which have a value larger than 0.
+
+        Returns
+        -------
+        pyvista.UniformGrid
+            A VTK UniformGrid object.
+        '''
         vox = self.voxels.copy(order = "F")
         vox[~(condition(vox))] = 0.
 
@@ -650,7 +686,7 @@ class Voxels:
 
         Parameters
         ----------
-        index: (3,) tuple
+        index : (3,) tuple
             The voxel indices, given as a 3-tuple.
 
         color : str or list-like, optional
@@ -682,7 +718,6 @@ class Voxels:
         If you want to render a small number of voxels as cubes using Plotly,
         use the `cubes_traces` method, which creates a list of individual cubes
         for all voxels, using this function.
-
         '''
 
         index = np.asarray(index, dtype = int)
@@ -705,12 +740,12 @@ class Voxels:
         k = np.array([0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6])
 
         cube = dict(
-            x =  x + xyz[0],
-            y =  y + xyz[1],
-            z =  z + xyz[2],
-            i =  i,
-            j =  j,
-            k =  k,
+            x = x + xyz[0],
+            y = y + xyz[1],
+            z = z + xyz[2],
+            i = i,
+            j = j,
+            k = k,
             opacity = opacity,
             color = color
         )
@@ -784,7 +819,6 @@ class Voxels:
         >>> fig = go.Figure()
         >>> fig.add_traces(voxels.cubes_traces())  # small number of voxels
         >>> fig.show()
-
         '''
 
         indices = np.argwhere(condition(self.voxels))
@@ -871,7 +905,6 @@ class Voxels:
         >>> grapher.add_lines(lines)
         >>> grapher.add_trace(voxels.voxels_trace())
         >>> grapher.show()
-
         '''
 
         filtered_indices = np.argwhere(condition(self.voxels))
@@ -927,7 +960,7 @@ class Voxels:
             The index along the x-axis of the voxels at which a YZ slice is to
             be taken. One of `ix`, `iy` or `iz` must be defined.
 
-        iy: int, optional
+        iy : int, optional
             The index along the y-axis of the voxels at which a XZ slice is to
             be taken. One of `ix`, `iy` or `iz` must be defined.
 
@@ -965,7 +998,6 @@ class Voxels:
         >>> fig = go.Figure()
         >>> fig.add_trace(voxels.heatmap_trace())
         >>> fig.show()
-
         '''
 
         if ix is not None:
@@ -1011,10 +1043,6 @@ class Voxels:
 
         # You need to install Plotly to use this function!
         return go.Heatmap(heatmap)
-
-
-    def __getitem__(self, *args, **kwargs):
-        return self.pixels.__getitem__(*args, **kwargs)
 
 
     def __repr__(self):

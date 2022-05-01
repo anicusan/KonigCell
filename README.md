@@ -36,6 +36,31 @@ threads, processes or distributed MPI nodes.
 
 
 
+## But Why?
+
+Rasterizing moving tracers onto uniform grids is a powerful way of computing statistics about a
+system - occupancies, velocity vector fields, modelling particle clump imaging etc. - be it 
+experimental or simulated. However, the classical approach of approximating particle trajectories
+as lines discards a lot of (most) information.
+
+Here is an example of a particle moving randomly inside a box - on a high resolution pixel grid,
+the classical approach (top row) does not yield much better statistics with increasing number of
+particle positions imaged. Projecting complete trajectory **areas** onto the grid (KonigCell,
+bottom row) preserves more information about the system explored:
+
+![Increasing Positions](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/increasing_positions.png?raw=true)
+
+
+A typical strategy for dealing with information loss is to coarsen the pixel grid, resulting in
+a trade-off between accuracy and statistical soundness. However, even very low resolutions
+still yield less information using line approximations (top row). With area projections,
+**you can increase the resolution arbitrarily** and improve precision (KonigCell, bottom row):
+
+![Increasing Resolution](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/increasing_resolution.png?raw=true)
+
+
+
+
 ## The KonigCell Libraries
 
 This repository effectively hosts three libraries:

@@ -51,7 +51,7 @@ end = time.time()
 print(f"Pixellised in {end - start} s.")
 
 # Compare pixellised area vs. analytical value
-area_pixellised = float(pixels.sum())
+area_pixellised = pixels.pixels.sum()
 area_analytical = (np.pi * radii * radii).sum()
 error = 1 - area_pixellised / area_analytical
 

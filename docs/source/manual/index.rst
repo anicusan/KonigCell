@@ -22,6 +22,19 @@ Grids
    konigcell.Voxels
 
 
+Projection Modes
+----------------
+``konigcell.RATIO`` - Weight cell values by the ratio of the intersected cell area /
+volume and the total circle area / sphere volume.
+
+``konigcell.INTERSECTION`` - Weight cell values by their intersected area / volume with
+the rasterized shape.
+
+``konigcell.PARTICLE`` - Weight cell values by the rasterized shape's area / volume.
+
+``konigcell.ONE`` - Add factors to cells with no weighting.
+
+
 2D Projections
 --------------
 
@@ -46,18 +59,6 @@ Grids
    konigcell.static_prob3d
 
 
-Projection Modes
-----------------
-
-.. autosummary::
-   :toctree: generated/
-
-   konigcell.RATIO
-   konigcell.INTERSECTION
-   konigcell.PARTICLE
-   konigcell.ONE
-
-
 Low Level Interface
 -------------------
 
@@ -67,4 +68,13 @@ Low Level Interface
    konigcell.kc2d
    konigcell.kc3d
 
+
+Plotting Utilities
+------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   konigcell.create_fig
+   konigcell.format_fig
 

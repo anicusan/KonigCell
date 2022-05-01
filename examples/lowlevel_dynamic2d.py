@@ -53,7 +53,7 @@ end = time.time()
 print(f"Pixellised in {end - start} s.")
 
 # Compare pixellised area vs. analytical value
-area_pixellised = float(pixels.sum())
+area_pixellised = pixels.pixels.sum()
 area_analytical = 0.5 * np.pi * radii[0] ** 2
 for i in range(num_particles - 1):
     distance = positions[i] - positions[i + 1]

@@ -36,38 +36,45 @@ class Pixels:
 
     Attributes
     ----------
-    pixels: (M, N) np.ndarray[ndim=2, dtype=float64]
+    pixels : (M, N) np.ndarray[ndim=2, dtype=float64]
         The 2D numpy array containing the pixel values. This class assumes a
         uniform grid of pixels - that is, the pixel size in each dimension is
         constant, but can vary from one dimension to another.
 
-    xlim: (2,) np.ndarray[ndim=1, dtype=float64]
+    xlim : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the pixellised volume in the
         x-dimension, formatted as [x_min, x_max].
 
-    ylim: (2,) np.ndarray[ndim=1, dtype=float64]
+    ylim : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower and upper boundaries of the pixellised volume in the
         y-dimension, formatted as [y_min, y_max].
 
-    pixel_size: (2,) np.ndarray[ndim=1, dtype=float64]
+    pixel_size : (2,) np.ndarray[ndim=1, dtype=float64]
         The lengths of a pixel in the x- and y-dimensions, respectively.
 
-    pixel_grids: list[(M+1,) np.ndarray, (N+1,) np.ndarray]
+    pixel_grids : list[(M+1,) np.ndarray, (N+1,) np.ndarray]
         A list containing the pixel gridlines in the x- and y-dimensions.
         Each dimension's gridlines are stored as a numpy of the pixel
         delimitations, such that it has length (M + 1), where M is the number
         of pixels in a given dimension.
 
-    lower: (2,) np.ndarray[ndim=1, dtype=float64]
+    lower : (2,) np.ndarray[ndim=1, dtype=float64]
         The lower left corner of the pixel rectangle; corresponds to
         [xlim[0], ylim[0]].
 
-    upper: (2,) np.ndarray[ndim=1, dtype=float64]
+    upper : (2,) np.ndarray[ndim=1, dtype=float64]
         The upper right corner of the pixel rectangle; corresponds to
         [xlim[1], ylim[1]].
 
-    attrs: dict[Any, Any]
+    attrs : dict[Any, Any]
         A dictionary storing any other user-defined information.
+
+    See Also
+    --------
+    konigcell.Voxels : A class managing a physical 3D voxel space.
+    konigcell.dynamic2d : Rasterize moving particles' trajectories.
+    konigcell.static2d : Rasterize static particles' positions.
+    konigcell.dynamic_prob2d : 2D probability distribution of a quantity.
 
     Notes
     -----
@@ -195,13 +202,6 @@ class Pixels:
     >>> fig = go.Figure()
     >>> fig.add_trace(pixels.heatmap_trace())
     >>> fig.show()
-
-    See Also
-    --------
-    konigcell.Voxels : a class managing a physical 3D voxel space.
-    konigcell.dynamic2d : rasterize moving particles' trajectories.
-    konigcell.static2d : rasterize static particles' positions.
-    konigcell.dynamic_prob2d : 2D probability distribution of a quantity.
     '''
     __slots__ = ("_pixels", "_xlim", "_ylim", "_attrs", "_pixel_size",
                  "_pixel_grids", "_lower", "_upper")
@@ -211,18 +211,18 @@ class Pixels:
 
         Parameters
         ----------
-        pixels_array: 3D numpy.ndarray
+        pixels_array : 3D numpy.ndarray
             A 3D numpy array, corresponding to a pre-defined pixel space.
 
-        xlim: (2,) numpy.ndarray
+        xlim : (2,) numpy.ndarray
             The lower and upper boundaries of the pixellised volume in the
             x-dimension, formatted as [x_min, x_max].
 
-        ylim: (2,) numpy.ndarray
+        ylim : (2,) numpy.ndarray
             The lower and upper boundaries of the pixellised volume in the
             y-dimension, formatted as [y_min, y_max].
 
-        kwargs: extra keyword arguments
+        **kwargs : extra keyword arguments
             Extra user-defined attributes to be saved in `.attrs`.
 
         Raises
@@ -235,7 +235,6 @@ class Pixels:
         -----
         No copies are made if `pixels_array`, `xlim` and `ylim` are contiguous
         NumPy arrays with dtype=float64.
-
         '''
 
         # Type-checking inputs
@@ -371,7 +370,6 @@ class Pixels:
         >>> pixels.save("pixels.pickle")
 
         >>> pixels_reloaded = kc.Pixels.load("pixels.pickle")
-
         '''
         with open(filepath, "wb") as f:
             pickle.dump(self, f)
@@ -406,7 +404,6 @@ class Pixels:
         >>> pixels.save("pixels.pickle")
 
         >>> pixels_reloaded = kc.Pixels.load("pixels.pickle")
-
         '''
         with open(filepath, "rb") as f:
             obj = pickle.load(f)
@@ -482,7 +479,6 @@ class Pixels:
         >>> pixels.from_physical([[0, 15], [5, 20]])
         array([[2. , 2. ],
                [4.5, 4.5]])
-
         '''
 
         offset = 0. if corner else self.pixel_size / 2
@@ -531,7 +527,6 @@ class Pixels:
         >>> pixels.to_physical([[0, 0], [4, 3]])
         array([[-4., 11.],
                [ 4., 17.]])
-
         '''
 
         offset = 0. if corner else self.pixel_size / 2
@@ -572,7 +567,6 @@ class Pixels:
         >>> fig = go.Figure()
         >>> fig.add_trace(pixels.heatmap_trace())
         >>> fig.show()
-
         '''
 
         # Compute the pixel centres
@@ -611,7 +605,8 @@ class Pixels:
 
         Returns
         -------
-        fig, ax : matplotlib figure and axes objects
+        fig, ax
+            Matplotlib figure and axes objects.
 
         Examples
         --------
@@ -624,7 +619,6 @@ class Pixels:
 
         >>> fig, ax = pixels.plot()
         >>> fig.show()
-
         '''
 
         # If you see this error, it means you don't have Matplotlib; install it
@@ -654,10 +648,6 @@ class Pixels:
         ax.set_ylabel("y (mm)")
 
         return fig, ax
-
-
-    def __getitem__(self, *args, **kwargs):
-        return self.pixels.__getitem__(*args, **kwargs)
 
 
     def __repr__(self):
