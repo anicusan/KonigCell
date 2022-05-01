@@ -43,10 +43,10 @@ system - occupancies, velocity vector fields, modelling particle clump imaging e
 experimental or simulated. However, the classical approach of approximating particle trajectories
 as lines discards a lot of (most) information.
 
-Here is an example of a particle moving randomly inside a box - on a high resolution pixel grid,
-the classical approach (top row) does not yield much better statistics with increasing number of
-particle positions imaged. Projecting complete trajectory **areas** onto the grid (KonigCell,
-bottom row) preserves more information about the system explored:
+Here is an example of a particle moving randomly inside a box - on a high resolution (512x512)
+pixel grid, the classical approach (top row) does not yield much better statistics with increasing
+numbers of particle positions imaged. Projecting complete trajectory **areas** onto the grid
+(KonigCell, bottom row) preserves more information about the system explored:
 
 ![Increasing Positions](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/increasing_positions.png?raw=true)
 
@@ -121,11 +121,61 @@ languages.
 ## Examples and Documentation
 
 The `examples` directory contains some Python scripts using the high-level Python routines
-and the low-level Cython interfaces. The `konigcell2d` and `konigcell3d` contain C examples.
+and the low-level Cython interfaces. The `konigcell2d` and `konigcell3d` directories contain
+C examples.
 
 Full documentation is available [here](https://konigcell.readthedocs.io/).
 
-[TODO: add example code on the repo README too]
+```python
+import numpy as np
+import konigcell as kc
+
+# Generate a short trajectory of XY positions to pixellise
+positions = np.array([
+    [0.3, 0.2],
+    [0.2, 0.8],
+    [0.3, 0.55],
+    [0.6, 0.8],
+    [0.3, 0.45],
+    [0.6, 0.2],
+])
+
+# The particle radius may change
+radii = np.array([0.05, 0.03, 0.01, 0.02, 0.02, 0.03])
+
+# Values to rasterize - velocity, duration, etc.
+values = np.array([1, 2, 1, 1, 2, 1])
+
+# Pixellise the particle trajectories
+pixels1 = kc.dynamic2d(
+    positions,
+    mode = kc.ONE,
+    radii = radii,
+    values = values[:-1],
+    resolution = (512, 512),
+)
+
+pixels2 = kc.static2d(
+    positions,
+    mode = kc.ONE,
+    radii = radii,
+    values = values,
+    resolution = (512, 512),
+)
+
+# Create Plotly 1x2 subplot grid and add Plotly heatmaps of pixels
+fig = kc.create_fig(
+	nrows = 1, ncols = 2,
+	subplot_titles = ["Dynamic 2D", "Static 2D"],
+)
+
+fig.add_trace(pixels1.heatmap_trace(), row = 1, col = 1)
+fig.add_trace(pixels2.heatmap_trace(), row = 1, col = 2)
+
+fig.show()
+```
+
+![Static-Dynamic 2D](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/static_dynamic2d.png?raw=true)
 
 
 
