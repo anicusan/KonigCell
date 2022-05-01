@@ -165,8 +165,8 @@ pixels2 = kc.static2d(
 
 # Create Plotly 1x2 subplot grid and add Plotly heatmaps of pixels
 fig = kc.create_fig(
-	nrows = 1, ncols = 2,
-	subplot_titles = ["Dynamic 2D", "Static 2D"],
+    nrows = 1, ncols = 2,
+    subplot_titles = ["Dynamic 2D", "Static 2D"],
 )
 
 fig.add_trace(pixels1.heatmap_trace(), row = 1, col = 1)
