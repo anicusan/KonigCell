@@ -1,6 +1,6 @@
 
 
-![KonigCell](/docs/source/_static/logo.png?raw=true "KonigCell Logo.")
+[![KonigCell](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/logo.png?raw=true)](https://konigcell.readthedocs.io/en/latest/)
 
 [![PyPI version shields.io](https://img.shields.io/pypi/v/konigcell.svg?style=flat-square)](https://pypi.python.org/pypi/konigcell/)
 [![Documentation Status](https://readthedocs.org/projects/konigcell/badge/?version=latest&style=flat-square)](https://konigcell.readthedocs.io/en/latest/?badge=latest)
@@ -9,7 +9,10 @@
 [![License: MIT](https://img.shields.io/github/license/anicusan/konigcell?style=flat-square)](https://github.com/anicusan/konigcell)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/konigcell.svg?style=flat-square)](https://pypi.python.org/pypi/konigcell/)
 
-
+[![Wheels Windows](https://img.shields.io/badge/Wheels-Windows%20x86%20%7C%20x86__64-brightgreen)](https://pypi.org/project/konigcell/#files)
+[![Wheels MacOS](https://img.shields.io/badge/Wheels-MacOS%20x86__64-brightgreen)](https://pypi.org/project/konigcell/#files)
+[![Wheels Linux](https://img.shields.io/badge/Wheels-Linux%20x86__64%20%7C%20i686-brightgreen)](https://pypi.org/project/konigcell/#files)
+[![Wheel Python](https://img.shields.io/badge/Wheels-Python%203.6%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-brightgreen)](https://pypi.org/project/konigcell/#files)
 
 #### **Quantitative, Fast Grid-Based Fields Calculations in 2D and 3D** - Residence Time Distributions, Velocity Grids, Eulerian Cell Projections etc.
 
@@ -20,7 +23,7 @@ That sounds dry as heck.
 Better? No? Here are some figures produced by KonigCell:
 
 
-![Example Plots](/docs/source/_static/examples.png?raw=true "Example plots produced by KonigCell.")
+![Example Plots](https://github.com/anicusan/KonigCell/blob/main/docs/source/_static/examples.png?raw=true)
 
 *Left panel: 2D residence time distribution in a GranuTools GranuDrum imaged using Positron Emission Particle Tracking (PEPT). Two middle panels: 3D velocity distribution in the same system; voxels are rendered as a scatter plot (left) and tomogram-like 3-slice (right). Right panel: velocity vectorfield in a constricted pipe simulating a aneurysm, imaged using PEPT.*
 
