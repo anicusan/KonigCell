@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, you are kindly asked to cite it as below."
+authors:
+  - family-names: Nicusan
+    given-names: Andrei-Leonard
+    orcid: https://orcid.org/0000-0002-4796-8719
+  - family-names: Windows-Yule
+    given-names: Kit
+    orcid: https://orcid.org/0000-0003-1305-537X
+title: "KonigCell: Quantitative, Fast Grid-Based Fields Calculations in 2D and 3D"
+version: 0.2.0
+doi: 10.5281/zenodo.7473472
+date-released: 2022-12-22
+url: "https://github.com/anicusan/KonigCell"
