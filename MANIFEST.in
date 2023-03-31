@@ -1,0 +1,10 @@
+include README.md CITATION.cff LICENSE CODE_OF_CONDUCT.md
+include requirements.txt requirements_extra.txt
+include *.rst *.txt
+recursive-include konigcell *.py *.pyx *.pxd *.c* *.h*
+recursive-include konigcell2d *.py *.pyx *.pxd *.c* *.h*
+recursive-include konigcell3d *.py *.pyx *.pxd *.c* *.h*
+global-exclude .DS_Store
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.so
